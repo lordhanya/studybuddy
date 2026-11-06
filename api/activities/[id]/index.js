@@ -1,9 +1,9 @@
-import { prisma } from "../lib/prisma.js";
-import { requireAuth } from "../lib/middleware.js";
+import { prisma } from "../../lib/prisma.js";
+import { requireAuth } from "../../lib/middleware.js";
 import {
   getActivityAccess,
   denyActivityAccess,
-} from "../lib/activityAccess.js";
+} from "../../lib/activityAccess.js";
 
 async function getActivity(req, res) {
   const { id } = req.query;

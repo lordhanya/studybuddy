@@ -6,9 +6,9 @@ import {
 } from "../../lib/activityAccess.js";
 
 async function handleComments(req, res) {
-  const { activityId } = req.query;
+  const { id } = req.query;
 
-  const access = await getActivityAccess(activityId, req.user.id);
+  const access = await getActivityAccess(id, req.user.id);
   if (access.status !== "ok") {
     denyActivityAccess(res, access);
     return;
@@ -16,7 +16,7 @@ async function handleComments(req, res) {
 
   if (req.method === "GET") {
     const comments = await prisma.comment.findMany({
-      where: { activityId },
+      where: { activityId: id },
       include: { user: { select: { id: true, fullName: true, email: true } } },
       orderBy: { createdAt: "asc" },
     });
@@ -31,7 +31,7 @@ async function handleComments(req, res) {
       return;
     }
     const comment = await prisma.comment.create({
-      data: { activityId, userId: req.user.id, content: content.trim() },
+      data: { activityId: id, userId: req.user.id, content: content.trim() },
       include: { user: { select: { id: true, fullName: true, email: true } } },
     });
     res.status(201).json(comment);

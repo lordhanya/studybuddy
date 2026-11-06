@@ -6,9 +6,9 @@ import {
 } from "../../lib/activityAccess.js";
 
 async function handleReactions(req, res) {
-  const { activityId } = req.query;
+  const { id } = req.query;
 
-  const access = await getActivityAccess(activityId, req.user.id);
+  const access = await getActivityAccess(id, req.user.id);
   if (access.status !== "ok") {
     denyActivityAccess(res, access);
     return;
@@ -16,7 +16,7 @@ async function handleReactions(req, res) {
 
   if (req.method === "GET") {
     const reactions = await prisma.reaction.findMany({
-      where: { activityId },
+      where: { activityId: id },
       include: { user: { select: { id: true, fullName: true } } },
       orderBy: { createdAt: "asc" },
     });
@@ -32,7 +32,9 @@ async function handleReactions(req, res) {
     }
     // Toggle: remove if user already reacted with same type, else add/update
     const existing = await prisma.reaction.findUnique({
-      where: { activityId_userId_type: { activityId, userId: req.user.id, type } },
+      where: {
+        activityId_userId_type: { activityId: id, userId: req.user.id, type },
+      },
     });
     if (existing) {
       await prisma.reaction.delete({ where: { id: existing.id } });
@@ -40,10 +42,10 @@ async function handleReactions(req, res) {
     } else {
       // Remove any other reaction type by this user on this activity (one reaction per user)
       await prisma.reaction.deleteMany({
-        where: { activityId, userId: req.user.id },
+        where: { activityId: id, userId: req.user.id },
       });
       const reaction = await prisma.reaction.create({
-        data: { activityId, userId: req.user.id, type },
+        data: { activityId: id, userId: req.user.id, type },
         include: { user: { select: { id: true, fullName: true } } },
       });
       res.status(201).json(reaction);

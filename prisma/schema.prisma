@@ -1,0 +1,274 @@
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "rhel-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum ProgressStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  COMPLETED
+  NEEDS_REVISION
+}
+
+enum GroupRole {
+  OWNER
+  ADMIN
+  MEMBER
+}
+
+enum ActivityType {
+  TOPIC_COMPLETED
+  CHAPTER_COMPLETED
+  STUDY_SESSION
+  MOCK_TEST
+  DAILY_UPDATE
+  GOAL_ACHIEVED
+  MEMBER_JOINED
+}
+
+enum GoalStatus {
+  ACTIVE
+  COMPLETED
+  CANCELLED
+}
+
+model User {
+  id           String      @id @default(cuid())
+  fullName     String
+  email        String      @unique
+  passwordHash String
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  memberships   GroupMember[]
+  topicProgress TopicProgress[]
+  activities    Activity[]
+  sessions      StudySession[]
+  goals         Goal[]
+  mockTests     MockTest[]
+  reactions     Reaction[]
+  comments      Comment[]
+  authSessions  Session[]
+  createdGroups StudyGroup[] @relation("GroupCreator")
+}
+
+model StudyGroup {
+  id           String      @id @default(cuid())
+  name         String
+  description  String?
+  inviteCode   String      @unique
+  createdBy    String
+  createdAt    DateTime    @default(now())
+
+  creator      User        @relation("GroupCreator", fields: [createdBy], references: [id], onDelete: Cascade)
+  members      GroupMember[]
+  workspaces   Workspace[]
+  activities   Activity[]
+}
+
+model GroupMember {
+  id        String     @id @default(cuid())
+  groupId   String
+  userId    String
+  role      GroupRole  @default(MEMBER)
+  joinedAt  DateTime   @default(now())
+
+  group  StudyGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  user   User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([groupId, userId])
+  @@index([groupId])
+  @@index([userId])
+}
+
+model Workspace {
+  id           String      @id @default(cuid())
+  groupId      String
+  name         String
+  description  String?
+  examType     String
+  examYear     String
+  createdAt    DateTime    @default(now())
+
+  group     StudyGroup  @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  subjects  Subject[]
+  sessions  StudySession[]
+  goals     Goal[]
+  mockTests MockTest[]
+  activities Activity[]
+
+  @@index([groupId])
+}
+
+model Subject {
+  id          String   @id @default(cuid())
+  workspaceId String
+  name        String
+  description String?
+  position    Int      @default(0)
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  chapters  Chapter[]
+
+  @@index([workspaceId])
+}
+
+model Chapter {
+  id        String   @id @default(cuid())
+  subjectId String
+  name      String
+  description String?
+  position  Int      @default(0)
+
+  subject Subject @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  topics  Topic[]
+
+  @@index([subjectId])
+}
+
+model Topic {
+  id        String   @id @default(cuid())
+  chapterId String
+  name      String
+  description String?
+  position  Int      @default(0)
+
+  chapter  Chapter @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+  progress TopicProgress[]
+
+  @@index([chapterId])
+}
+
+model TopicProgress {
+  id         String          @id @default(cuid())
+  topicId    String
+  userId     String
+  status     ProgressStatus  @default(NOT_STARTED)
+  completedAt DateTime?
+  updatedAt  DateTime        @updatedAt
+
+  topic Topic @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([topicId, userId])
+  @@index([topicId])
+  @@index([userId])
+}
+
+model Activity {
+  id          String      @id @default(cuid())
+  groupId     String?
+  userId      String
+  workspaceId String?
+  type        ActivityType
+  content     String
+  metadata    Json        @default("{}")
+  createdAt   DateTime    @default(now())
+
+  user     User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  group    StudyGroup? @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  workspace Workspace?  @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  reactions Reaction[]
+  comments  Comment[]
+
+  @@index([userId])
+  @@index([groupId])
+  @@index([workspaceId])
+  @@index([createdAt])
+}
+
+model StudySession {
+  id         String   @id @default(cuid())
+  userId     String
+  workspaceId String?
+  duration   Int
+  startedAt  DateTime
+  endedAt    DateTime?
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workspace Workspace? @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([workspaceId])
+}
+
+model Goal {
+  id          String   @id @default(cuid())
+  userId      String
+  workspaceId String?
+  title       String
+  description String?
+  targetDate  DateTime?
+  status      GoalStatus @default(ACTIVE)
+  createdAt   DateTime   @default(now())
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workspace Workspace? @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([workspaceId])
+}
+
+model MockTest {
+  id               String   @id @default(cuid())
+  userId           String
+  workspaceId      String?
+  title            String
+  subject          String
+  totalMarks       Int
+  obtainedMarks    Int
+  attemptedQuestions Int
+  correctAnswers   Int
+  incorrectAnswers Int
+  testDate         DateTime
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workspace Workspace? @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([workspaceId])
+}
+
+model Reaction {
+  id        String   @id @default(cuid())
+  activityId String
+  userId    String
+  type      String
+  createdAt DateTime @default(now())
+
+  activity Activity @relation(fields: [activityId], references: [id], onDelete: Cascade)
+  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([activityId, userId, type])
+  @@index([activityId])
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  activityId String
+  userId    String
+  content   String
+  createdAt DateTime @default(now())
+
+  activity Activity @relation(fields: [activityId], references: [id], onDelete: Cascade)
+  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([activityId])
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  expiresAt DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+}

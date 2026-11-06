@@ -1,0 +1,11 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": null,
+  "installCommand": "npm install && cd client && npm install",
+  "buildCommand": "npm run db:generate && cd client && npm run build",
+  "outputDirectory": "client/dist",
+  "devCommand": "cd client && npm run dev",
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
+}

@@ -2,6 +2,7 @@
   "name": "studybuddy",
   "private": true,
   "version": "1.0.0",
+  "type": "module",
   "scripts": {
     "db:generate": "prisma generate",
     "db:push": "prisma db push",

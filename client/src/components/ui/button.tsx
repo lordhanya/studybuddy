@@ -4,7 +4,6 @@ import { cn } from "@/lib/utils";
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: "default" | "destructive" | "outline" | "secondary" | "ghost" | "link";
   size?: "default" | "sm" | "lg" | "icon";
-  asChild?: boolean;
 }
 
 function buttonVariant(variant?: ButtonProps["variant"]) {
@@ -38,10 +37,9 @@ function buttonSize(size?: ButtonProps["size"]) {
 }
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant = "default", size = "default", asChild = false, ...props }, ref) => {
-    const Comp = asChild ? React.Fragment : "button";
+  ({ className, variant = "default", size = "default", ...props }, ref) => {
     return (
-      <Comp
+      <button
         ref={ref}
         className={cn(
           "inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))] focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
@@ -49,7 +47,8 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
           buttonSize(size),
           className
         )}
-        {...(asChild ? props : { type: "button", ...props })}
+        type="button"
+        {...props}
       />
     );
   }

@@ -1,10 +1,11 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import ErrorBanner from "@/components/ErrorBanner";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -30,7 +31,7 @@ export default function LoginPage() {
 
   return (
     <Card className="w-full">
-      <CardHeader className="pb-8">
+      <CardHeader className="pb-8 text-center">
         <CardTitle className="text-center">Welcome back</CardTitle>
         <p className="text-center text-sm text-[hsl(var(--muted-foreground))]">
           Sign in to your StudyBuddy account
@@ -43,6 +44,7 @@ export default function LoginPage() {
             <Input
               id="email"
               type="email"
+              autoComplete="email"
               required
               placeholder="you@example.com"
               value={email}
@@ -54,17 +56,14 @@ export default function LoginPage() {
             <Input
               id="password"
               type="password"
+              autoComplete="current-password"
               required
               placeholder="••••••••"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
             />
           </div>
-          {error && (
-            <div className="text-sm text-[hsl(var(--destructive))] bg-[hsl(var(--destructive))]/10 px-3 py-2 rounded border border-[hsl(var(--destructive))]/20">
-              {error}
-            </div>
-          )}
+          {error && <ErrorBanner message={error} />}
           <Button type="submit" className="w-full" disabled={loading}>
             {loading ? "Signing in…" : "Sign in"}
           </Button>
@@ -73,7 +72,10 @@ export default function LoginPage() {
       <CardFooter className="border-t pt-5">
         <p className="text-sm text-center text-[hsl(var(--muted-foreground))]">
           Don't have an account?{" "}
-          <Link to="/register" className="text-[hsl(var(--primary))] hover:underline font-medium">
+          <Link
+            to="/register"
+            className="text-[hsl(var(--primary))] hover:underline font-medium"
+          >
             Create an account
           </Link>
         </p>

@@ -49,10 +49,34 @@ async function updateWorkspace(req, res) {
     res.status(403).json({ message: "Not a member of this group" });
     return;
   }
-  const updated = await prisma.workspace.update({
-    where: { id },
-    data: { name, description, examType, examYear },
-  });
+  const data = {};
+  if (name !== undefined) {
+    const cleanName = String(name).trim();
+    if (!cleanName) {
+      res.status(400).json({ message: "Workspace name cannot be empty" });
+      return;
+    }
+    data.name = cleanName;
+  }
+  if (description !== undefined) data.description = String(description || "").trim() || null;
+  if (examType !== undefined) {
+    const cleanExamType = String(examType).trim();
+    if (!cleanExamType) {
+      res.status(400).json({ message: "Exam type cannot be empty" });
+      return;
+    }
+    data.examType = cleanExamType;
+  }
+  if (examYear !== undefined) {
+    const parsedYear = parseInt(examYear, 10);
+    if (!Number.isFinite(parsedYear) || parsedYear < 1900 || parsedYear > 2200) {
+      res.status(400).json({ message: "examYear must be a valid year" });
+      return;
+    }
+    data.examYear = parsedYear;
+  }
+
+  const updated = await prisma.workspace.update({ where: { id }, data });
   res.json(updated);
 }
 

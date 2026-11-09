@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
 import { api } from "@/services/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,10 +8,9 @@ import { Badge } from "@/components/ui/badge";
 import PageHeader from "@/components/PageHeader";
 import EmptyState from "@/components/EmptyState";
 import ErrorBanner from "@/components/ErrorBanner";
-import { Clock, Trash2, Users } from "lucide-react";
+import { Clock, Trash2 } from "lucide-react";
 
 export default function SessionsPage() {
-  const navigate = useNavigate();
   const [sessions, setSessions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -58,9 +56,8 @@ export default function SessionsPage() {
         endedAt: form.endedAt || undefined,
       };
       const session = await api.sessions.create(body);
-      setSessions([session, ...sessions]);
+      setSessions((current) => [session, ...current]);
       setForm({ workspaceId: "", duration: "", startedAt: "", endedAt: "" });
-      setCreating(false);
     } catch (err) {
       setError(err.message || "Failed to log session");
     } finally {
@@ -72,7 +69,7 @@ export default function SessionsPage() {
     if (!window.confirm("Delete this session?")) return;
     try {
       await api.sessions.remove(id);
-      setSessions(sessions.filter((s) => s.id !== id));
+      setSessions((current) => current.filter((s) => s.id !== id));
     } catch (err) {
       setError(err.message || "Failed to delete session");
     }
@@ -91,8 +88,6 @@ export default function SessionsPage() {
       <PageHeader
         title="Study Sessions"
         description="Track your study time. Duration is in minutes."
-        backLink="/workspaces"
-        backLabel="Back to workspaces"
       />
 
       {error && <ErrorBanner message={error} onRetry={loadData} />}
@@ -190,7 +185,7 @@ export default function SessionsPage() {
         {sessions.length ? (
           sessions.map((s) => (
             <Card key={s.id}>
-              <CardHeader className="pb-3 flex flex-row items-center justify-between sm:flex-col sm:items-start sm:gap-2">
+              <CardHeader className="pb-3 flex flex-row items-center justify-between gap-2">
                 <div className="flex-1 min-w-0">
                   <CardTitle className="text-base">
                     {s.workspace ? s.workspace.name : "Personal session"}

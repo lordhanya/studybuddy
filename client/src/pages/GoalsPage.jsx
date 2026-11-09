@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
 import { api } from "@/services/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -18,7 +17,6 @@ const STATUS_CONFIG = {
 };
 
 export default function GoalsPage() {
-  const navigate = useNavigate();
   const [goals, setGoals] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -64,9 +62,8 @@ export default function GoalsPage() {
       };
       if (form.workspaceId) body.workspaceId = form.workspaceId;
       const goal = await api.goals.create(body);
-      setGoals([goal, ...goals]);
+      setGoals((current) => [goal, ...current]);
       setForm({ workspaceId: "", title: "", description: "", targetDate: "", status: "ACTIVE" });
-      setCreating(false);
     } catch (err) {
       setError(err.message || "Failed to create goal");
     } finally {
@@ -109,9 +106,7 @@ export default function GoalsPage() {
     <div className="space-y-6">
       <PageHeader
         title="Study Goals"
-        description="Set personal and shared study targets. Track your progress over time."
-        backLink="/workspaces"
-        backLabel="Back to workspaces"
+        description="Set personal study targets and track your progress over time."
       />
 
       {error && <ErrorBanner message={error} onRetry={loadData} />}
@@ -215,7 +210,7 @@ export default function GoalsPage() {
             const cfg = STATUS_CONFIG[goal.status] || STATUS_CONFIG.ACTIVE;
             return (
               <Card key={goal.id}>
-                <CardHeader className="pb-3 flex flex-row items-center justify-between sm:flex-col sm:items-start sm:gap-2">
+                <CardHeader className="pb-3 flex flex-row items-center justify-between gap-2">
                   <div className="flex-1 min-w-0">
                     <CardTitle className="text-base">{goal.title}</CardTitle>
                     {goal.description && (
@@ -236,7 +231,7 @@ export default function GoalsPage() {
                   )}
                   {goal.targetDate && (
                     <p className="text-xs text-[hsl(var(--muted-foreground))] mb-3">
-                      Target: {new Date(goal.targetDate).toLocaleDateString()}
+                      Target: {formatDate(goal.targetDate)}
                     </p>
                   )}
                   <div className="flex items-center gap-2 pt-3 flex-wrap">
@@ -266,7 +261,7 @@ export default function GoalsPage() {
             );
           })
         ) : (
-          <Card>
+          <Card className="sm:col-span-2 lg:col-span-3">
             <EmptyState
               icon={Target}
               title="No goals yet"
@@ -277,4 +272,11 @@ export default function GoalsPage() {
       </div>
     </div>
   );
+}
+
+// Date-only fields are stored at UTC midnight. Format in UTC so the day the
+// user picked does not shift backwards in negative UTC offsets.
+function formatDate(value) {
+  if (!value) return "";
+  return new Date(value).toLocaleDateString(undefined, { timeZone: "UTC" });
 }

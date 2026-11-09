@@ -25,6 +25,7 @@
     --input: 0 0% 88%;
     --ring: 215 91% 52%;
     --radius: 0.5rem;
+    color-scheme: light;
   }
 
   .dark {
@@ -49,9 +50,6 @@
     --input: 0 0% 16%;
     --ring: 215 91% 52%;
     --radius: 0.5rem;
-  }
-
-  .dark {
     color-scheme: dark;
   }
 }

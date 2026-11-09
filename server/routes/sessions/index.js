@@ -26,17 +26,35 @@ async function listSessions(req, res) {
     where,
     include: { workspace: { select: { id: true, name: true } } },
     orderBy: { startedAt: "desc" },
-    take: limit ? Math.min(parseInt(limit, 10), 100) : 50,
+    take: parseLimit(limit, 50),
   });
 
   res.json(sessions);
 }
 
+function parseLimit(value, fallback) {
+  const parsed = parseInt(value, 10);
+  if (!Number.isFinite(parsed) || parsed <= 0) return fallback;
+  return Math.min(parsed, 100);
+}
+
 async function createSession(req, res) {
   const { workspaceId, duration, startedAt, endedAt } = req.body || {};
 
-  if (!duration || duration <= 0) {
+  const minutes = Number(duration);
+  if (!Number.isFinite(minutes) || minutes <= 0) {
     res.status(400).json({ message: "Valid duration (minutes) is required" });
+    return;
+  }
+
+  const start = startedAt ? new Date(startedAt) : new Date();
+  if (Number.isNaN(start.getTime())) {
+    res.status(400).json({ message: "Invalid start time" });
+    return;
+  }
+  const end = endedAt ? new Date(endedAt) : null;
+  if (end && Number.isNaN(end.getTime())) {
+    res.status(400).json({ message: "Invalid end time" });
     return;
   }
 
@@ -60,9 +78,9 @@ async function createSession(req, res) {
     data: {
       userId: req.user.id,
       workspaceId: workspaceIdFinal,
-      duration,
-      startedAt: startedAt ? new Date(startedAt) : new Date(),
-      endedAt: endedAt ? new Date(endedAt) : null,
+      duration: Math.round(minutes),
+      startedAt: start,
+      endedAt: end,
     },
     include: { workspace: { select: { id: true, name: true } } },
   });

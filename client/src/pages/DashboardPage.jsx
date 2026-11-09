@@ -87,7 +87,7 @@ export default function DashboardPage() {
     <div className="space-y-6">
       <PageHeader
         title="Dashboard"
-        description={`Welcome back, {user?.fullName}. Here's your progress at a glance.`}
+        description={`Welcome back, ${user?.fullName || "there"}. Here's your progress at a glance.`}
         actions={
           <Button
             variant="outline"

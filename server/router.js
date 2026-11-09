@@ -171,17 +171,38 @@ export default async function handler(req, res) {
   const queryString = apiPath.split("?").slice(1).join("?");
   const params = extractParams(route.keys, m);
 
-  const existingQuery = {};
-  if (queryString) {
-    for (const pair of queryString.split("&")) {
-      const [k, v] = pair.split("=");
-      if (k !== undefined) {
-        existingQuery[k] = v !== undefined ? decodeURIComponent(v) : "";
-      }
+  req.query = { ...parseQuery(queryString), ...params };
+
+  try {
+    return await route.handler(req, res);
+  } catch (err) {
+    console.error(`[api] ${req.method} ${pathname} failed:`, err);
+    if (!res.headersSent) {
+      res.status(500).json({ message: "Internal server error" });
     }
   }
+}
 
-  req.query = { ...existingQuery, ...params };
+function safeDecode(value) {
+  try {
+    return decodeURIComponent(value.replace(/\+/g, " "));
+  } catch {
+    return value;
+  }
+}
 
-  return route.handler(req, res);
+function parseQuery(queryString) {
+  const query = {};
+  if (!queryString) return query;
+
+  for (const pair of queryString.split("&")) {
+    if (!pair) continue;
+    const separator = pair.indexOf("=");
+    const rawKey = separator === -1 ? pair : pair.slice(0, separator);
+    const rawValue = separator === -1 ? "" : pair.slice(separator + 1);
+    const key = safeDecode(rawKey);
+    if (key) query[key] = safeDecode(rawValue);
+  }
+
+  return query;
 }

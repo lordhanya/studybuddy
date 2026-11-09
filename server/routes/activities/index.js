@@ -63,20 +63,28 @@ async function listActivities(req, res) {
       },
     },
     orderBy: { createdAt: "desc" },
-    take: limit ? Math.min(parseInt(limit, 10), 100) : 50,
+    take: parseLimit(limit, 50),
   });
 
   res.json(activities);
 }
 
+function parseLimit(value, fallback) {
+  const parsed = parseInt(value, 10);
+  if (!Number.isFinite(parsed) || parsed <= 0) return fallback;
+  return Math.min(parsed, 100);
+}
+
 async function createActivity(req, res) {
-  const { groupId, userId, workspaceId, type, content, metadata } = req.body || {};
+  const { groupId, workspaceId, type, content, metadata } = req.body || {};
+
+  const cleanContent = String(content || "").trim();
 
   if (!type || !VALID_TYPES.includes(type)) {
     res.status(400).json({ message: "Valid activity type is required" });
     return;
   }
-  if (!content) {
+  if (!cleanContent) {
     res.status(400).json({ message: "Content is required" });
     return;
   }
@@ -116,7 +124,7 @@ async function createActivity(req, res) {
       userId: actorId,
       workspaceId: workspaceId || null,
       type,
-      content,
+      content: cleanContent,
       metadata: metadata || {},
     },
     include: {

@@ -25,26 +25,57 @@ async function listTests(req, res) {
     where,
     include: { workspace: { select: { id: true, name: true } } },
     orderBy: { testDate: "desc" },
-    take: limit ? Math.min(parseInt(limit, 10), 100) : 50,
+    take: parseLimit(limit, 50),
   });
 
   res.json(tests);
 }
 
+function parseLimit(value, fallback) {
+  const parsed = parseInt(value, 10);
+  if (!Number.isFinite(parsed) || parsed <= 0) return fallback;
+  return Math.min(parsed, 100);
+}
+
 async function createTest(req, res) {
   const { workspaceId, title, subject, totalMarks, obtainedMarks, attemptedQuestions, correctAnswers, incorrectAnswers, testDate } = req.body || {};
 
-  if (!title || !subject) {
+  const cleanTitle = String(title || "").trim();
+  const cleanSubject = String(subject || "").trim();
+  const total = Number(totalMarks);
+  const obtained = Number(obtainedMarks);
+  const attempted = attemptedQuestions == null ? null : Number(attemptedQuestions);
+  const correct = correctAnswers == null ? 0 : Number(correctAnswers);
+  const incorrect = incorrectAnswers == null ? 0 : Number(incorrectAnswers);
+
+  if (!cleanTitle || !cleanSubject) {
     res.status(400).json({ message: "Title and subject are required" });
     return;
   }
-  if (totalMarks == null || totalMarks <= 0) {
+  if (!Number.isFinite(total) || total <= 0) {
     res.status(400).json({ message: "Valid total marks is required" });
     return;
   }
-  if (obtainedMarks == null || obtainedMarks < 0 || obtainedMarks > totalMarks) {
+  if (!Number.isFinite(obtained) || obtained < 0 || obtained > total) {
     res.status(400).json({ message: "Obtained marks must be between 0 and total marks" });
     return;
+  }
+  if (attempted != null && (!Number.isFinite(attempted) || attempted < 0)) {
+    res.status(400).json({ message: "Attempted questions must be a non-negative number" });
+    return;
+  }
+  if (!Number.isFinite(correct) || correct < 0 || !Number.isFinite(incorrect) || incorrect < 0) {
+    res.status(400).json({ message: "Correct and incorrect answers must be non-negative numbers" });
+    return;
+  }
+
+  let parsedDate = new Date();
+  if (testDate) {
+    parsedDate = new Date(testDate);
+    if (Number.isNaN(parsedDate.getTime())) {
+      res.status(400).json({ message: "Invalid test date" });
+      return;
+    }
   }
 
   let workspaceIdFinal = workspaceId || null;
@@ -67,22 +98,23 @@ async function createTest(req, res) {
     data: {
       userId: req.user.id,
       workspaceId: workspaceIdFinal,
-      title,
-      subject,
-      totalMarks,
-      obtainedMarks,
-      attemptedQuestions:
-        attemptedQuestions != null
-          ? attemptedQuestions
-          : (correctAnswers || 0) + (incorrectAnswers || 0),
-      correctAnswers: correctAnswers || 0,
-      incorrectAnswers: incorrectAnswers || 0,
-      testDate: testDate ? new Date(testDate) : new Date(),
+      title: cleanTitle,
+      subject: cleanSubject,
+      totalMarks: total,
+      obtainedMarks: obtained,
+      attemptedQuestions: attempted != null ? Math.round(attempted) : attemptedCount(correct, incorrect),
+      correctAnswers: Math.round(correct),
+      incorrectAnswers: Math.round(incorrect),
+      testDate: parsedDate,
     },
     include: { workspace: { select: { id: true, name: true } } },
   });
 
   res.status(201).json(test);
+}
+
+function attemptedCount(correct, incorrect) {
+  return Math.round(correct) + Math.round(incorrect);
 }
 
 export default async function handler(req, res) {

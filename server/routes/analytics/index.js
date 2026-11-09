@@ -4,6 +4,11 @@ import { requireAuth } from "../../lib/middleware.js";
 async function getAnalytics(req, res) {
   const { workspaceId } = req.query;
 
+  if (!workspaceId) {
+    res.status(400).json({ message: "workspaceId is required" });
+    return;
+  }
+
   const ws = await prisma.workspace.findUnique({ where: { id: workspaceId } });
   if (!ws) {
     res.status(404).json({ message: "Workspace not found" });
@@ -85,13 +90,16 @@ async function getAnalytics(req, res) {
     };
   });
 
-  // Mock test trend (last 10)
-  const tests = await prisma.mockTest.findMany({
-    where: { userId: uid, workspaceId },
-    select: { title: true, obtainedMarks: true, totalMarks: true, testDate: true },
-    orderBy: { testDate: "desc" },
-    take: 10,
-  });
+  // Mock test trend (last 10) plus the true total for the summary card.
+  const [tests, testsTaken] = await Promise.all([
+    prisma.mockTest.findMany({
+      where: { userId: uid, workspaceId },
+      select: { title: true, obtainedMarks: true, totalMarks: true, testDate: true },
+      orderBy: { testDate: "desc" },
+      take: 10,
+    }),
+    prisma.mockTest.count({ where: { userId: uid, workspaceId } }),
+  ]);
 
   const mockTrend = tests
     .map((t) => ({
@@ -109,6 +117,7 @@ async function getAnalytics(req, res) {
     totalStudyHours: Math.round((sessions.reduce((acc, s) => acc + s.duration, 0) / 60) * 10) / 10,
     dailyHours,
     subjectProgress,
+    mockTestsTaken: testsTaken,
     mockTrend,
   });
 }

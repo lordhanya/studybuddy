@@ -17,15 +17,17 @@ export default class ErrorBoundary extends React.Component {
   render() {
     if (this.state.error) {
       return (
-        <div className="min-h-screen flex items-center justify-center bg-[hsl(var(--background))] px-6">
+        <div className="min-h-[100dvh] flex items-center justify-center bg-[hsl(var(--background))] px-4 sm:px-6">
           <div className="w-full max-w-md rounded-md border border-[hsl(var(--input))] bg-[hsl(var(--card))] p-6 text-[hsl(var(--card-foreground))]">
             <h1 className="text-lg font-semibold">Something went wrong</h1>
             <p className="mt-2 text-sm text-[hsl(var(--muted-foreground))]">
               The page could not be rendered. Reload to try again.
             </p>
-            <pre className="mt-4 max-h-40 overflow-auto rounded bg-[hsl(var(--secondary))] p-3 text-xs">
-              {String(this.state.error?.message || this.state.error)}
-            </pre>
+            {import.meta.env.DEV && (
+              <pre className="mt-4 max-h-40 overflow-auto rounded bg-[hsl(var(--secondary))] p-3 text-xs">
+                {String(this.state.error?.message || this.state.error)}
+              </pre>
+            )}
             <button
               type="button"
               onClick={() => window.location.reload()}

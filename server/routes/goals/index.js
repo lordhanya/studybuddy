@@ -40,9 +40,21 @@ async function listGoals(req, res) {
 async function createGoal(req, res) {
   const { workspaceId, title, description, targetDate, status } = req.body || {};
 
-  if (!title) {
+  const cleanTitle = String(title || "").trim();
+  const cleanDescription = String(description || "").trim();
+
+  if (!cleanTitle) {
     res.status(400).json({ message: "Title is required" });
     return;
+  }
+
+  let parsedDate = null;
+  if (targetDate) {
+    parsedDate = new Date(targetDate);
+    if (Number.isNaN(parsedDate.getTime())) {
+      res.status(400).json({ message: "Invalid target date" });
+      return;
+    }
   }
 
   let workspaceIdFinal = workspaceId || null;
@@ -67,9 +79,9 @@ async function createGoal(req, res) {
     data: {
       userId: req.user.id,
       workspaceId: workspaceIdFinal,
-      title,
-      description,
-      targetDate: targetDate ? new Date(targetDate) : null,
+      title: cleanTitle,
+      description: cleanDescription || null,
+      targetDate: parsedDate,
       status: goalStatus,
     },
     include: {

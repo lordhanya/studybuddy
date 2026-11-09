@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { api } from "@/services/api";
 import { Card, CardContent, CardTitle } from "@/components/ui/card";
@@ -182,8 +182,6 @@ export default function ActivityPage() {
       <PageHeader
         title="Activity"
         description="See what's happening in your study groups."
-        backLink="/workspaces"
-        backLabel="Back to workspaces"
       />
 
       {!workspaces.length ? (
@@ -206,9 +204,9 @@ export default function ActivityPage() {
           {error && <ErrorBanner message={error} />}
 
           <Card>
-            <CardContent className="pt-0">
-              <div className="px-4 sm:p-5 pb-4">
-                <CardTitle className="text-base mb-4 sm:mb-0">Share an update</CardTitle>
+            <CardContent className="pt-5 pb-4">
+              <div>
+                <CardTitle className="text-base mb-4">Share an update</CardTitle>
                 <form onSubmit={handleCreate} className="space-y-4">
                   <div className="space-y-2">
                     <label

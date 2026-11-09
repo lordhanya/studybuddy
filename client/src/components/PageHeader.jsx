@@ -8,17 +8,17 @@ export default function PageHeader({
   backLabel = "Back",
 }) {
   return (
-    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0">
-      {backLink && (
-        <Link
-          to={backLink}
-          className="text-xs sm:text-sm text-[hsl(var(--muted-foreground))] hover:underline inline-flex items-center gap-1"
-        >
-          <span className="h-4 w-4">←</span>
-          {backLabel}
-        </Link>
-      )}
-      <div className="flex flex-col sm:flex-row sm:items-start gap-1 sm:gap-0">
+    <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+      <div className="min-w-0 space-y-1">
+        {backLink && (
+          <Link
+            to={backLink}
+            className="text-xs text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] hover:underline inline-flex items-center gap-1"
+          >
+            <span aria-hidden="true">←</span>
+            {backLabel}
+          </Link>
+        )}
         <h2 className="text-lg sm:text-xl font-semibold tracking-tight">{title}</h2>
         {description && (
           <p className="text-sm text-[hsl(var(--muted-foreground))] leading-relaxed">
@@ -26,7 +26,9 @@ export default function PageHeader({
           </p>
         )}
       </div>
-      {actions && <div className="flex items-center gap-2">{actions}</div>}
+      {actions && (
+        <div className="flex shrink-0 flex-wrap items-center gap-2">{actions}</div>
+      )}
     </div>
   );
 }

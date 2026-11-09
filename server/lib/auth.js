@@ -13,16 +13,6 @@ export function generateToken() {
   return crypto.randomBytes(32).toString("hex");
 }
 
-export function cookieOptions() {
-  const isProd = process.env.NODE_ENV === "production";
-  return {
-    httpOnly: true,
-    secure: isProd,
-    sameSite: "lax",
-    path: "/",
-  };
-}
-
 export function setSessionCookie(res, token, expiresAt) {
   const maxAge = Math.floor((new Date(expiresAt) - Date.now()) / 1000);
   res.setHeader(

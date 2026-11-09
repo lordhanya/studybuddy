@@ -18,7 +18,7 @@ import AnalyticsPage from "@/pages/AnalyticsPage";
 
 function FullPageLoader() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[hsl(var(--background))] text-sm text-[hsl(var(--muted-foreground))]">
+    <div className="min-h-[100dvh] flex items-center justify-center bg-[hsl(var(--background))] text-sm text-[hsl(var(--muted-foreground))]">
       Loading…
     </div>
   );

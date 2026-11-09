@@ -35,9 +35,29 @@ async function updateGoal(req, res) {
   }
 
   const data = {};
-  if (title !== undefined) data.title = title;
-  if (description !== undefined) data.description = description;
-  if (targetDate !== undefined) data.targetDate = targetDate ? new Date(targetDate) : null;
+  if (title !== undefined) {
+    const cleanTitle = String(title).trim();
+    if (!cleanTitle) {
+      res.status(400).json({ message: "Title cannot be empty" });
+      return;
+    }
+    data.title = cleanTitle;
+  }
+  if (description !== undefined) {
+    data.description = String(description || "").trim() || null;
+  }
+  if (targetDate !== undefined) {
+    if (targetDate === null || targetDate === "") {
+      data.targetDate = null;
+    } else {
+      const parsedDate = new Date(targetDate);
+      if (Number.isNaN(parsedDate.getTime())) {
+        res.status(400).json({ message: "Invalid target date" });
+        return;
+      }
+      data.targetDate = parsedDate;
+    }
+  }
   if (status !== undefined) {
     if (!VALID_STATUSES.includes(status)) {
       res.status(400).json({ message: "Invalid status" });

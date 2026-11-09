@@ -35,7 +35,8 @@ async function listTopics(req, res) {
 
 async function createTopic(req, res) {
   const { chapterId, name, description, position } = req.body || {};
-  if (!chapterId || !name) {
+  const cleanName = String(name || "").trim();
+  if (!chapterId || !cleanName) {
     res.status(400).json({ message: "chapterId and name are required" });
     return;
   }
@@ -51,8 +52,8 @@ async function createTopic(req, res) {
   const topic = await prisma.topic.create({
     data: {
       chapterId,
-      name,
-      description,
+      name: cleanName,
+      description: String(description || "").trim() || null,
       position: position != null ? position : (maxPos._max.position || 0) + 1,
     },
   });

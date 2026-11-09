@@ -37,7 +37,8 @@ async function listChapters(req, res) {
 
 async function createChapter(req, res) {
   const { subjectId, name, description, position } = req.body || {};
-  if (!subjectId || !name) {
+  const cleanName = String(name || "").trim();
+  if (!subjectId || !cleanName) {
     res.status(400).json({ message: "subjectId and name are required" });
     return;
   }
@@ -53,8 +54,8 @@ async function createChapter(req, res) {
   const chapter = await prisma.chapter.create({
     data: {
       subjectId,
-      name,
-      description,
+      name: cleanName,
+      description: String(description || "").trim() || null,
       position: position != null ? position : (maxPos._max.position || 0) + 1,
     },
   });

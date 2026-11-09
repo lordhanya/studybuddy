@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
 import { api } from "@/services/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,10 +8,9 @@ import { Badge } from "@/components/ui/badge";
 import PageHeader from "@/components/PageHeader";
 import EmptyState from "@/components/EmptyState";
 import ErrorBanner from "@/components/ErrorBanner";
-import { BarChart3, Trash2, Users } from "lucide-react";
+import { BarChart3, Trash2 } from "lucide-react";
 
 export default function TestsPage() {
-  const navigate = useNavigate();
   const [tests, setTests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -23,7 +21,6 @@ export default function TestsPage() {
     subject: "",
     totalMarks: "100",
     obtainedMarks: "0",
-    attemptedQuestions: "0",
     correctAnswers: "0",
     incorrectAnswers: "0",
     testDate: "",
@@ -68,25 +65,22 @@ export default function TestsPage() {
         subject: form.subject,
         totalMarks: parseInt(form.totalMarks, 10),
         obtainedMarks: parseInt(form.obtainedMarks, 10),
-        attemptedQuestions: parseInt(form.attemptedQuestions, 10) || 0,
         correctAnswers: parseInt(form.correctAnswers, 10) || 0,
         incorrectAnswers: parseInt(form.incorrectAnswers, 10) || 0,
         testDate: form.testDate || undefined,
       };
       const test = await api.tests.create(body);
-      setTests([test, ...tests]);
+      setTests((current) => [test, ...current]);
       setForm({
         workspaceId: "",
         title: "",
         subject: "",
         totalMarks: "100",
         obtainedMarks: "0",
-        attemptedQuestions: "0",
         correctAnswers: "0",
         incorrectAnswers: "0",
         testDate: "",
       });
-      setCreating(false);
     } catch (err) {
       setError(err.message || "Failed to record test");
     } finally {
@@ -98,7 +92,7 @@ export default function TestsPage() {
     if (!window.confirm("Delete this test?")) return;
     try {
       await api.tests.remove(id);
-      setTests(tests.filter((t) => t.id !== id));
+      setTests((current) => current.filter((t) => t.id !== id));
     } catch (err) {
       setError(err.message || "Failed to delete test");
     }
@@ -117,8 +111,6 @@ export default function TestsPage() {
       <PageHeader
         title="Mock Tests"
         description="Record your mock test results and track performance over time."
-        backLink="/workspaces"
-        backLabel="Back to workspaces"
       />
 
       {error && <ErrorBanner message={error} onRetry={loadData} />}
@@ -244,7 +236,7 @@ export default function TestsPage() {
               </div>
             </div>
             <p className="text-xs text-[hsl(var(--muted-foreground))] mt-2">
-              Attempted questions is auto-calculated from correct + incorrect if not provided.
+              Attempted questions are calculated from correct + incorrect answers.
             </p>
             <Button
               type="submit"
@@ -263,7 +255,7 @@ export default function TestsPage() {
             const pct = t.totalMarks > 0 ? Math.round((t.obtainedMarks / t.totalMarks) * 100) : 0;
             return (
               <Card key={t.id}>
-                <CardHeader className="pb-3 flex flex-row items-center justify-between sm:flex-col sm:items-start sm:gap-2">
+                <CardHeader className="pb-3 flex flex-row items-center justify-between gap-2">
                   <div className="flex-1 min-w-0">
                     <CardTitle className="text-base">{t.title}</CardTitle>
                     <div className="flex items-center gap-1.5 text-xs text-[hsl(var(--muted-foreground))] mt-1">
@@ -272,7 +264,7 @@ export default function TestsPage() {
                       {t.workspace && <span>· {t.workspace.name}</span>}
                     </div>
                     <div className="text-xs text-[hsl(var(--muted-foreground))]">
-                      {new Date(t.testDate).toLocaleDateString()}
+                      {formatDate(t.testDate)}
                     </div>
                   </div>
                   <Badge
@@ -327,4 +319,11 @@ export default function TestsPage() {
       </div>
     </div>
   );
+}
+
+// Date-only fields are stored at UTC midnight. Format in UTC so the day the
+// user picked does not shift backwards in negative UTC offsets.
+function formatDate(value) {
+  if (!value) return "";
+  return new Date(value).toLocaleDateString(undefined, { timeZone: "UTC" });
 }

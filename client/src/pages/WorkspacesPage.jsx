@@ -32,14 +32,20 @@ export default function WorkspacesPage() {
 
   const loadData = async () => {
     try {
-      const [ws, gs] = await Promise.all([
+      const [wsResult, gsResult] = await Promise.allSettled([
         api.workspaces.list(),
         api.get("/api/groups"),
       ]);
-      setWorkspaces(ws || []);
-      setGroups(gs || []);
-    } catch (e) {
-      setError(e.message || "Failed to load workspaces");
+      if (wsResult.status === "fulfilled") {
+        setWorkspaces(Array.isArray(wsResult.value) ? wsResult.value : []);
+      }
+      if (gsResult.status === "fulfilled") {
+        setGroups(Array.isArray(gsResult.value) ? gsResult.value : []);
+      }
+      const failed = [wsResult, gsResult].find((r) => r.status === "rejected");
+      if (failed) {
+        setError(failed.reason?.message || "Failed to load workspaces");
+      }
     } finally {
       setLoading(false);
     }
@@ -86,7 +92,17 @@ export default function WorkspacesPage() {
             <CardTitle className="text-base">Create workspace</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4 pt-0">
-            <form onSubmit={handleCreate}>
+            {groups.length === 0 ? (
+              <EmptyState
+                icon={Users}
+                title="Create a study group first"
+                description="Workspaces belong to a group. Create or join a group, then come back to add a workspace."
+                actions={
+                  <Button onClick={() => navigate("/groups")}>Go to groups</Button>
+                }
+              />
+            ) : (
+            <form onSubmit={handleCreate} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="wsGroup">Study group</Label>
                 <select
@@ -141,13 +157,14 @@ export default function WorkspacesPage() {
                   onChange={(e) => setForm({ ...form, description: e.target.value })}
                 />
               </div>
-              <div className="flex gap-2 sm:flex-col sm:w-full">
-                <Button type="submit" className="flex-1 sm:w-full">Create workspace</Button>
-                <Button variant="outline" type="button" onClick={() => setCreating(false)} className="flex-1 sm:w-full">
+              <div className="flex flex-col gap-2 sm:flex-row">
+                <Button type="submit" className="w-full sm:w-auto">Create workspace</Button>
+                <Button variant="outline" type="button" onClick={() => setCreating(false)} className="w-full sm:w-auto">
                   Cancel
                 </Button>
               </div>
             </form>
+            )}
           </CardContent>
         </Card>
       )}
@@ -156,7 +173,7 @@ export default function WorkspacesPage() {
         {workspaces.length ? (
           workspaces.map((w) => (
             <Card key={w.id}>
-              <CardHeader className="pb-3 flex flex-row items-start justify-between gap-2 sm:flex-col sm:items-start sm:gap-2">
+              <CardHeader className="pb-3 flex flex-row items-start justify-between gap-2">
                 <div className="flex-1 min-w-0">
                   <CardTitle className="text-base">{w.name}</CardTitle>
                   <div className="flex items-center gap-1.5 text-xs text-[hsl(var(--muted-foreground))] mt-1">
@@ -176,7 +193,7 @@ export default function WorkspacesPage() {
                 )}
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-[hsl(var(--muted-foreground))]">
-                    {w._count.subjects} subject{w._count.subjects !== 1 ? "s" : ""}
+                    {w._count?.subjects ?? 0} subject{(w._count?.subjects ?? 0) !== 1 ? "s" : ""}
                   </span>
                   <Button size="sm" onClick={() => navigate(`/workspaces/${w.id}/syllabus`)}>
                     Open syllabus
@@ -186,7 +203,7 @@ export default function WorkspacesPage() {
             </Card>
           ))
         ) : (
-          <Card>
+          <Card className="sm:col-span-2 lg:col-span-3">
             <EmptyState
               icon={BookOpen}
               title="No workspaces yet"

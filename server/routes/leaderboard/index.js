@@ -4,6 +4,11 @@ import { requireAuth } from "../../lib/middleware.js";
 async function getLeaderboard(req, res) {
   const { workspaceId, metric } = req.query;
 
+  if (!workspaceId) {
+    res.status(400).json({ message: "workspaceId is required" });
+    return;
+  }
+
   const ws = await prisma.workspace.findUnique({ where: { id: workspaceId } });
   if (!ws) {
     res.status(404).json({ message: "Workspace not found" });
@@ -17,75 +22,99 @@ async function getLeaderboard(req, res) {
     return;
   }
 
-  // Get all group members
   const members = await prisma.groupMember.findMany({
     where: { groupId: ws.groupId },
     include: { user: { select: { id: true, fullName: true, email: true } } },
   });
+  const userIds = members.map((m) => m.user.id);
 
-  // Compute metrics per member
-  const results = await Promise.all(
-    members.map(async (m) => {
-      const uid = m.user.id;
+  // Batch every aggregate once instead of querying per member.
+  const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+  const [
+    totalTopics,
+    completedGroups,
+    sessionGroups,
+    weeklyGroups,
+    mockTests,
+  ] = await Promise.all([
+    prisma.topic.count({
+      where: { chapter: { subject: { workspaceId } } },
+    }),
+    prisma.topicProgress.groupBy({
+      by: ["userId"],
+      where: {
+        userId: { in: userIds },
+        status: "COMPLETED",
+        topic: { chapter: { subject: { workspaceId } } },
+      },
+      _count: { _all: true },
+    }),
+    prisma.studySession.groupBy({
+      by: ["userId"],
+      where: { userId: { in: userIds }, workspaceId },
+      _sum: { duration: true },
+    }),
+    prisma.studySession.groupBy({
+      by: ["userId"],
+      where: { userId: { in: userIds }, workspaceId, startedAt: { gte: sevenDaysAgo } },
+      _count: { _all: true },
+    }),
+    prisma.mockTest.findMany({
+      where: { userId: { in: userIds }, workspaceId },
+      select: { userId: true, obtainedMarks: true, totalMarks: true },
+    }),
+  ]);
 
-      // Syllabus completion for this workspace
-      const totalTopics = await prisma.topic.count({
-        where: { chapter: { subject: { workspaceId } } },
-      });
-      const completedTopics = await prisma.topicProgress.count({
-        where: { userId: uid, status: "COMPLETED", topic: { chapter: { subject: { workspaceId } } } },
-      });
-      const completionPct = totalTopics > 0 ? Math.round((completedTopics / totalTopics) * 100) : 0;
+  const completedByUser = new Map(completedGroups.map((g) => [g.userId, g._count._all]));
+  const durationByUser = new Map(sessionGroups.map((g) => [g.userId, g._sum.duration || 0]));
+  const weeklyByUser = new Map(weeklyGroups.map((g) => [g.userId, g._count._all]));
+  const testsByUser = new Map();
+  for (const test of mockTests) {
+    if (!testsByUser.has(test.userId)) testsByUser.set(test.userId, []);
+    testsByUser.get(test.userId).push(test);
+  }
 
-      // Study hours (total duration in minutes -> hours)
-      const sessionAgg = await prisma.studySession.aggregate({
-        where: { userId: uid, workspaceId },
-        _sum: { duration: true },
-      });
-      const studyHours = Math.round(((sessionAgg._sum.duration || 0) / 60) * 10) / 10;
+  const results = members.map((m) => {
+    const uid = m.user.id;
+    const completedTopics = completedByUser.get(uid) || 0;
+    const completionPct = totalTopics > 0 ? Math.round((completedTopics / totalTopics) * 100) : 0;
+    const studyHours = Math.round(((durationByUser.get(uid) || 0) / 60) * 10) / 10;
+    const weeklySessions = weeklyByUser.get(uid) || 0;
 
-      // Weekly consistency: sessions in last 7 days
-      const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-      const weeklySessions = await prisma.studySession.count({
-        where: { userId: uid, workspaceId, startedAt: { gte: sevenDaysAgo } },
-      });
+    const tests = testsByUser.get(uid) || [];
+    let avgPct = 0;
+    if (tests.length > 0) {
+      const sum = tests.reduce(
+        (acc, t) => acc + (t.totalMarks > 0 ? (t.obtainedMarks / t.totalMarks) * 100 : 0),
+        0
+      );
+      avgPct = Math.round(sum / tests.length);
+    }
 
-      // Mock test performance: average percentage
-      const tests = await prisma.mockTest.findMany({
-        where: { userId: uid, workspaceId },
-        select: { obtainedMarks: true, totalMarks: true },
-      });
-      let avgPct = 0;
-      if (tests.length > 0) {
-        const sum = tests.reduce((acc, t) => acc + (t.totalMarks > 0 ? (t.obtainedMarks / t.totalMarks) * 100 : 0), 0);
-        avgPct = Math.round(sum / tests.length);
-      }
-
-      // Composite score: completion (40%) + study hours capped (20%) + weekly consistency (20%) + mock avg (20%)
-      // Avoid using study hours as sole metric - combine with others
-      const hoursScore = Math.min(studyHours, 40) / 40; // cap at 40 hours
-      const weeklyScore = Math.min(weeklySessions, 7) / 7; // cap at 7 sessions/week
-      const composite = Math.round(
-        completionPct * 0.4 +
+    // Composite score: completion (40%) + study hours capped (20%)
+    // + weekly consistency (20%) + mock average (20%).
+    const hoursScore = Math.min(studyHours, 40) / 40;
+    const weeklyScore = Math.min(weeklySessions, 7) / 7;
+    const composite = Math.round(
+      completionPct * 0.4 +
         hoursScore * 100 * 0.2 +
         weeklyScore * 100 * 0.2 +
         avgPct * 0.2
-      );
+    );
 
-      return {
-        user: { id: m.user.id, fullName: m.user.fullName, email: m.user.email },
-        role: m.role,
-        completionPercentage: completionPct,
-        topicsCompleted: completedTopics,
-        totalTopics,
-        studyHours,
-        weeklySessions,
-        mockTestsTaken: tests.length,
-        mockAveragePercentage: avgPct,
-        compositeScore: composite,
-      };
-    })
-  );
+    return {
+      user: { id: m.user.id, fullName: m.user.fullName, email: m.user.email },
+      role: m.role,
+      completionPercentage: completionPct,
+      topicsCompleted: completedTopics,
+      totalTopics,
+      studyHours,
+      weeklySessions,
+      mockTestsTaken: tests.length,
+      mockAveragePercentage: avgPct,
+      compositeScore: composite,
+    };
+  });
 
   // Sort by composite score (or by specified metric)
   results.sort((a, b) => {
@@ -98,7 +127,9 @@ async function getLeaderboard(req, res) {
   });
 
   // Add rank
-  results.forEach((r, i) => { r.rank = i + 1; });
+  results.forEach((r, i) => {
+    r.rank = i + 1;
+  });
 
   res.json({
     workspace: { id: ws.id, name: ws.name, examType: ws.examType, examYear: ws.examYear },

@@ -4,28 +4,6 @@ export default {
   darkMode: "class",
   theme: {
     extend: {
-      colors: {
-        // Single accent (blue)
-        accent: {
-          DEFAULT: "#2563eb",
-          hover: "#1d4ed8",
-          light: "rgba(37, 99, 235, 0.12)",
-        },
-        // Neutral palette (dark-first)
-        neutral: {
-          50: "#fafafa",
-          100: "#f5f5f5",
-          200: "#e5e5e5",
-          300: "#d4d4d4",
-          400: "#a3a3a3",
-          500: "#737373",
-          600: "#525252",
-          700: "#404040",
-          800: "#262626",
-          900: "#171717",
-          950: "#0a0a0a",
-        },
-      },
       fontFamily: {
         sans: ["Inter", "system-ui", "-apple-system", "BlinkMacSystemFont", "sans-serif"],
       },
@@ -37,10 +15,6 @@ export default {
         xl: ["1.25rem", { lineHeight: "1.75rem" }],
         "2xl": ["1.5rem", { lineHeight: "2rem" }],
         "3xl": ["1.875rem", { lineHeight: "2.25rem" }],
-      },
-      spacing: {
-        "section": "1.5rem",
-        "page": "2rem",
       },
       borderRadius: {
         sm: "0.375rem",

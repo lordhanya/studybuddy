@@ -32,7 +32,10 @@ async function listGroups(req, res) {
 async function createGroup(req, res) {
   const { name, description } = req.body || {};
 
-  if (!name) {
+  const cleanName = String(name || "").trim();
+  const cleanDescription = String(description || "").trim();
+
+  if (!cleanName) {
     res.status(400).json({ message: "Group name is required" });
     return;
   }
@@ -42,7 +45,12 @@ async function createGroup(req, res) {
 
   const group = await prisma.$transaction(async (tx) => {
     const g = await tx.studyGroup.create({
-      data: { name, description, inviteCode, createdBy: req.user.id },
+      data: {
+        name: cleanName,
+        description: cleanDescription || null,
+        inviteCode,
+        createdBy: req.user.id,
+      },
     });
     await tx.groupMember.create({
       data: { groupId: g.id, userId: req.user.id, role: "OWNER" },

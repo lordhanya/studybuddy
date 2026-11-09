@@ -21,8 +21,17 @@ async function listWorkspaces(req, res) {
 async function createWorkspace(req, res) {
   const { groupId, name, description, examType, examYear } = req.body || {};
 
-  if (!groupId || !name || !examType || !examYear) {
-    res.status(400).json({ message: "groupId, name, examType and examYear are required" });
+  const cleanName = String(name || "").trim();
+  const cleanExamType = String(examType || "").trim();
+  const cleanDescription = String(description || "").trim();
+  const parsedYear = parseInt(examYear, 10);
+
+  if (!groupId || !cleanName || !cleanExamType) {
+    res.status(400).json({ message: "groupId, name and examType are required" });
+    return;
+  }
+  if (!Number.isFinite(parsedYear) || parsedYear < 1900 || parsedYear > 2200) {
+    res.status(400).json({ message: "examYear must be a valid year" });
     return;
   }
 
@@ -36,7 +45,13 @@ async function createWorkspace(req, res) {
   }
 
   const workspace = await prisma.workspace.create({
-    data: { groupId, name, description, examType, examYear },
+    data: {
+      groupId,
+      name: cleanName,
+      description: cleanDescription || null,
+      examType: cleanExamType,
+      examYear: parsedYear,
+    },
     include: { group: { select: { id: true, name: true } } },
   });
 

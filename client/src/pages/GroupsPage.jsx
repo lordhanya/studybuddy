@@ -76,11 +76,11 @@ export default function GroupsPage() {
         title="Study Groups"
         description="Create or join groups to study together and compare progress."
         actions={
-          <div className="flex gap-2 sm:flex-col sm:w-full">
-            <Button className="w-auto sm:w-full" onClick={() => setCreateMode(true)}>
+          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+            <Button className="w-full sm:w-auto" onClick={() => setCreateMode(true)}>
               <Plus className="h-4 w-4 shrink-0" /> Create group
             </Button>
-            <Button variant="outline" className="w-auto sm:w-full" onClick={() => setJoinMode(true)}>
+            <Button variant="outline" className="w-full sm:w-auto" onClick={() => setJoinMode(true)}>
               Join by invite code
             </Button>
           </div>
@@ -95,7 +95,7 @@ export default function GroupsPage() {
             <CardTitle className="text-base">Create a new group</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4 pt-0">
-            <form onSubmit={createGroup}>
+            <form onSubmit={createGroup} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="groupName">Group name</Label>
                 <Input
@@ -130,7 +130,7 @@ export default function GroupsPage() {
             <CardTitle className="text-base">Join a group</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4 pt-0">
-            <form onSubmit={joinGroup}>
+            <form onSubmit={joinGroup} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="inviteCode">Invite code</Label>
                 <Input
@@ -189,7 +189,7 @@ export default function GroupsPage() {
               </Card>
             ))
           ) : (
-            <Card>
+            <Card className="sm:col-span-2 lg:col-span-3">
               <EmptyState
                 icon={Users}
                 title="No groups yet"

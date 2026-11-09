@@ -18,6 +18,8 @@ const STATUS_CONFIG = {
   NEEDS_REVISION: { label: "Needs revision", variant: "destructive" },
 };
 
+const STATUS_ORDER = ["NOT_STARTED", "IN_PROGRESS", "COMPLETED", "NEEDS_REVISION"];
+
 export default function SyllabusPage() {
   const { workspaceId } = useParams();
   const [workspace, setWorkspace] = useState(null);
@@ -35,22 +37,30 @@ export default function SyllabusPage() {
   const [savingItem, setSavingItem] = useState(false);
 
   const loadData = async () => {
-    try {
-      const [ws, prog] = await Promise.all([
-        api.workspaces.get(workspaceId),
-        api.progress.list(workspaceId),
-      ]);
-      setWorkspace(ws);
+    setError("");
+    const [wsResult, progResult] = await Promise.allSettled([
+      api.workspaces.get(workspaceId),
+      api.progress.list(workspaceId),
+    ]);
+
+    if (wsResult.status === "fulfilled") {
+      setWorkspace(wsResult.value);
+    } else {
+      setError(wsResult.reason?.message || "Failed to load workspace");
+    }
+
+    if (progResult.status === "fulfilled") {
       const map = {};
-      (prog || []).forEach((p) => {
+      (progResult.value || []).forEach((p) => {
         map[p.topic.id] = p.status;
       });
       setProgressMap(map);
-    } catch (e) {
-      setError(e.message || "Failed to load syllabus");
-    } finally {
-      setLoading(false);
+    } else {
+      setProgressMap({});
+      setError((current) => current || progResult.reason?.message || "Failed to load progress");
     }
+
+    setLoading(false);
   };
 
   useEffect(() => {
@@ -84,8 +94,7 @@ export default function SyllabusPage() {
 
   const cycleStatus = (topicId) => {
     const current = progressMap[topicId] || "NOT_STARTED";
-    const order = ["NOT_STARTED", "IN_PROGRESS", "COMPLETED", "NEEDS_REVISION"];
-    const next = order[(order.indexOf(current) + 1) % order.length];
+    const next = STATUS_ORDER[(STATUS_ORDER.indexOf(current) + 1) % STATUS_ORDER.length];
     setStatus(topicId, next);
   };
 
@@ -175,7 +184,7 @@ export default function SyllabusPage() {
         backLink="/workspaces"
         backLabel="Back to workspaces"
         actions={
-          <div className="flex items-center gap-2 sm:flex-col sm:w-auto sm:items-start">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
             <Badge variant="outline" className="text-xs shrink-0">
               Completion: {completion()}%
             </Badge>
@@ -214,11 +223,11 @@ export default function SyllabusPage() {
                   onChange={(e) => setSubjectDescription(e.target.value)}
                 />
               </div>
-              <div className="flex gap-2 sm:flex-col sm:w-full">
-                <Button type="submit" disabled={saving || !subjectName.trim()} className="flex-1 sm:w-full">
+              <div className="flex flex-col gap-2 sm:flex-row">
+                <Button type="submit" disabled={saving || !subjectName.trim()} className="w-full sm:w-auto">
                   {saving ? "Adding…" : "Add subject"}
                 </Button>
-                <Button type="button" variant="outline" onClick={() => setShowAddSubject(false)} className="flex-1 sm:w-full">
+                <Button type="button" variant="outline" onClick={() => setShowAddSubject(false)} className="w-full sm:w-auto">
                   Cancel
                 </Button>
               </div>
@@ -320,19 +329,7 @@ export default function SyllabusPage() {
                               setTopicName("");
                               setAddingChapterFor("");
                             }}
-                            className="flex items-center gap-1 text-xs text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--primary))] sm:hidden"
-                            title="Add topic"
-                          >
-                            <Plus className="h-3 w-3" /> Add topic
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setAddingTopicFor(addingTopicFor === chapter.id ? "" : chapter.id);
-                              setTopicName("");
-                              setAddingChapterFor("");
-                            }}
-                            className="hidden sm:flex items-center gap-1 text-xs text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--primary))]"
+                            className="flex items-center gap-1 text-xs text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--primary))]"
                             title="Add topic"
                           >
                             <Plus className="h-3 w-3" /> Add topic
@@ -355,7 +352,13 @@ export default function SyllabusPage() {
                                 className="w-full flex items-center justify-between text-left hover:bg-[hsl(var(--secondary))]/50 rounded-md px-3 py-2 transition-colors sm:flex-row sm:gap-2"
                                 onClick={() => cycleStatus(topic.id)}
                                 title="Click to cycle topic status"
-                                aria-label={`Set ${topic.name} to ${status}`}
+                                aria-label={`${topic.name}: ${cfg.label}. Activate to set ${
+                                  STATUS_CONFIG[
+                                    STATUS_ORDER[
+                                      (STATUS_ORDER.indexOf(status) + 1) % STATUS_ORDER.length
+                                    ]
+                                  ].label
+                                }.`}
                               >
                                 <span className="flex items-center gap-2 min-w-0">
                                   <span

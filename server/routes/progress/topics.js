@@ -71,7 +71,10 @@ async function listProgress(req, res) {
   }
 
   const progress = await prisma.topicProgress.findMany({
-    where: { userId: req.user.id },
+    where: {
+      userId: req.user.id,
+      topic: { chapter: { subject: { workspaceId } } },
+    },
     include: {
       topic: {
         include: {
@@ -81,12 +84,7 @@ async function listProgress(req, res) {
     },
   });
 
-  // Filter to only topics in this workspace
-  const workspaceProgress = progress.filter((p) =>
-    p.topic.chapter.subject.workspaceId === workspaceId
-  );
-
-  res.json(workspaceProgress);
+  res.json(progress);
 }
 
 export default async function handler(req, res) {

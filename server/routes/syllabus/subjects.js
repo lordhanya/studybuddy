@@ -39,7 +39,8 @@ async function listSubjects(req, res) {
 
 async function createSubject(req, res) {
   const { workspaceId, name, description, position } = req.body || {};
-  if (!workspaceId || !name) {
+  const cleanName = String(name || "").trim();
+  if (!workspaceId || !cleanName) {
     res.status(400).json({ message: "workspaceId and name are required" });
     return;
   }
@@ -55,8 +56,8 @@ async function createSubject(req, res) {
   const subject = await prisma.subject.create({
     data: {
       workspaceId,
-      name,
-      description,
+      name: cleanName,
+      description: String(description || "").trim() || null,
       position: position != null ? position : (maxPos._max.position || 0) + 1,
     },
   });

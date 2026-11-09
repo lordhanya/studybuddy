@@ -33,9 +33,38 @@ async function updateSession(req, res) {
   }
 
   const data = {};
-  if (duration !== undefined) data.duration = duration;
-  if (startedAt !== undefined) data.startedAt = new Date(startedAt);
-  if (endedAt !== undefined) data.endedAt = endedAt ? new Date(endedAt) : null;
+  if (duration !== undefined) {
+    const minutes = Number(duration);
+    if (!Number.isFinite(minutes) || minutes <= 0) {
+      res.status(400).json({ message: "Valid duration (minutes) is required" });
+      return;
+    }
+    data.duration = Math.round(minutes);
+  }
+  if (startedAt !== undefined) {
+    if (startedAt === null || startedAt === "") {
+      res.status(400).json({ message: "Start time is required" });
+      return;
+    }
+    const start = new Date(startedAt);
+    if (Number.isNaN(start.getTime())) {
+      res.status(400).json({ message: "Invalid start time" });
+      return;
+    }
+    data.startedAt = start;
+  }
+  if (endedAt !== undefined) {
+    if (endedAt === null || endedAt === "") {
+      data.endedAt = null;
+    } else {
+      const end = new Date(endedAt);
+      if (Number.isNaN(end.getTime())) {
+        res.status(400).json({ message: "Invalid end time" });
+        return;
+      }
+      data.endedAt = end;
+    }
+  }
 
   const updated = await prisma.studySession.update({ where: { id }, data, include: { workspace: { select: { id: true, name: true } } } });
   res.json(updated);

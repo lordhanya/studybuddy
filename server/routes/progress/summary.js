@@ -20,53 +20,51 @@ async function getProgressSummary(req, res) {
     return;
   }
 
-  // Total topics in this workspace
-  const totalTopics = await prisma.topic.count({
-    where: {
-      chapter: {
-        subject: { workspaceId },
-      },
-    },
-  });
-
-  // Progress per user in this workspace
   const memberships = await prisma.groupMember.findMany({
     where: { groupId: ws.groupId },
     include: { user: true },
   });
+  const userIds = memberships.map((m) => m.user.id);
 
-  const userProgress = await Promise.all(
-    memberships.map(async (m) => {
-      const completed = await prisma.topicProgress.count({
-        where: {
-          userId: m.user.id,
-          status: "COMPLETED",
-          topic: {
-            chapter: { subject: { workspaceId } },
-          },
-        },
-      });
-      const inProgress = await prisma.topicProgress.count({
-        where: {
-          userId: m.user.id,
-          status: "IN_PROGRESS",
-          topic: {
-            chapter: { subject: { workspaceId } },
-          },
-        },
-      });
-      const percentage = totalTopics > 0 ? Math.round((completed / totalTopics) * 100) : 0;
-      return {
-        user: { id: m.user.id, fullName: m.user.fullName, email: m.user.email },
-        totalTopics,
-        completedTopics: completed,
-        inProgressTopics: inProgress,
-        completionPercentage: percentage,
-      };
-    })
-  );
+  const [totalTopics, completedGroups, inProgressGroups] = await Promise.all([
+    prisma.topic.count({
+      where: { chapter: { subject: { workspaceId } } },
+    }),
+    prisma.topicProgress.groupBy({
+      by: ["userId"],
+      where: {
+        userId: { in: userIds },
+        status: "COMPLETED",
+        topic: { chapter: { subject: { workspaceId } } },
+      },
+      _count: { _all: true },
+    }),
+    prisma.topicProgress.groupBy({
+      by: ["userId"],
+      where: {
+        userId: { in: userIds },
+        status: "IN_PROGRESS",
+        topic: { chapter: { subject: { workspaceId } } },
+      },
+      _count: { _all: true },
+    }),
+  ]);
 
-  // Current user's detailed progress
+  const completedByUser = new Map(completedGroups.map((g) => [g.userId, g._count._all]));
+  const inProgressByUser = new Map(inProgressGroups.map((g) => [g.userId, g._count._all]));
+
+  const userProgress = memberships.map((m) => {
+    const completed = completedByUser.get(m.user.id) || 0;
+    const inProgress = inProgressByUser.get(m.user.id) || 0;
+    return {
+      user: { id: m.user.id, fullName: m.user.fullName, email: m.user.email },
+      totalTopics,
+      completedTopics: completed,
+      inProgressTopics: inProgress,
+      completionPercentage: totalTopics > 0 ? Math.round((completed / totalTopics) * 100) : 0,
+    };
+  });
+
   const myProgress = userProgress.find((p) => p.user.id === req.user.id);
 
   res.json({

@@ -33,14 +33,59 @@ async function updateTest(req, res) {
   }
 
   const data = {};
-  if (title !== undefined) data.title = title;
-  if (subject !== undefined) data.subject = subject;
-  if (totalMarks !== undefined) data.totalMarks = totalMarks;
-  if (obtainedMarks !== undefined) data.obtainedMarks = obtainedMarks;
-  if (attemptedQuestions !== undefined) data.attemptedQuestions = attemptedQuestions;
-  if (correctAnswers !== undefined) data.correctAnswers = correctAnswers;
-  if (incorrectAnswers !== undefined) data.incorrectAnswers = incorrectAnswers;
-  if (testDate !== undefined) data.testDate = new Date(testDate);
+  if (title !== undefined) {
+    const cleanTitle = String(title).trim();
+    if (!cleanTitle) {
+      res.status(400).json({ message: "Title cannot be empty" });
+      return;
+    }
+    data.title = cleanTitle;
+  }
+  if (subject !== undefined) {
+    const cleanSubject = String(subject).trim();
+    if (!cleanSubject) {
+      res.status(400).json({ message: "Subject cannot be empty" });
+      return;
+    }
+    data.subject = cleanSubject;
+  }
+
+  const nextTotal = totalMarks !== undefined ? Number(totalMarks) : test.totalMarks;
+  const nextObtained = obtainedMarks !== undefined ? Number(obtainedMarks) : test.obtainedMarks;
+  if (!Number.isFinite(nextTotal) || nextTotal <= 0) {
+    res.status(400).json({ message: "Valid total marks is required" });
+    return;
+  }
+  if (!Number.isFinite(nextObtained) || nextObtained < 0 || nextObtained > nextTotal) {
+    res.status(400).json({ message: "Obtained marks must be between 0 and total marks" });
+    return;
+  }
+  if (totalMarks !== undefined) data.totalMarks = nextTotal;
+  if (obtainedMarks !== undefined) data.obtainedMarks = nextObtained;
+
+  for (const [key, label] of [
+    ["attemptedQuestions", "Attempted questions"],
+    ["correctAnswers", "Correct answers"],
+    ["incorrectAnswers", "Incorrect answers"],
+  ]) {
+    const value = { attemptedQuestions, correctAnswers, incorrectAnswers }[key];
+    if (value === undefined) continue;
+    const num = Number(value);
+    if (!Number.isFinite(num) || num < 0) {
+      res.status(400).json({ message: `${label} must be a non-negative number` });
+      return;
+    }
+    data[key] = Math.round(num);
+  }
+
+  if (testDate !== undefined) {
+    const date = new Date(testDate);
+    if (Number.isNaN(date.getTime())) {
+      res.status(400).json({ message: "Invalid test date" });
+      return;
+    }
+    data.testDate = date;
+  }
 
   const updated = await prisma.mockTest.update({ where: { id }, data, include: { workspace: { select: { id: true, name: true } } } });
   res.json(updated);

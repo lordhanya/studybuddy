@@ -1,11 +1,14 @@
 import { useEffect, useState } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { api } from "@/services/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import PageHeader from "@/components/PageHeader";
+import EmptyState from "@/components/EmptyState";
+import ErrorBanner from "@/components/ErrorBanner";
 import { ChevronRight, Plus } from "lucide-react";
 
 const STATUS_CONFIG = {
@@ -150,44 +153,40 @@ export default function SyllabusPage() {
 
   if (loading) {
     return (
-      <div className="flex h-full items-center justify-center text-[hsl(var(--muted-foreground))]">
+      <div className="flex min-h-[60vh] items-center justify-center text-[hsl(var(--muted-foreground))]">
         Loading syllabus…
       </div>
     );
   }
 
   if (!workspace) {
-    return <div className="text-[hsl(var(--destructive))] text-sm">{error || "Workspace not found"}</div>;
+    return (
+      <div className="text-[hsl(var(--destructive))] text-sm p-4 sm:p-6">
+        {error || "Workspace not found"}
+      </div>
+    );
   }
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-4">
-        <div>
-          <Link
-            to="/workspaces"
-            className="text-sm text-[hsl(var(--muted-foreground))] hover:underline mb-2 block"
-          >
-            ← Back to workspaces
-          </Link>
-          <h1 className="text-lg font-semibold tracking-tight">{workspace.name}</h1>
-          <p className="text-sm text-[hsl(var(--muted-foreground))]">
-            {workspace.examType} {workspace.examYear} · {workspace.group.name}
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
-          <Badge variant="outline">Completion: {completion()}%</Badge>
-          <Button onClick={() => setShowAddSubject((open) => !open)}>
-            <Plus className="h-4 w-4" /> Add subject
-          </Button>
-        </div>
-      </div>
+      <PageHeader
+        title={workspace.name}
+        description={`${workspace.examType} ${workspace.examYear} · ${workspace.group.name}`}
+        backLink="/workspaces"
+        backLabel="Back to workspaces"
+        actions={
+          <div className="flex items-center gap-2 sm:flex-col sm:w-auto sm:items-start">
+            <Badge variant="outline" className="text-xs shrink-0">
+              Completion: {completion()}%
+            </Badge>
+            <Button onClick={() => setShowAddSubject((open) => !open)}>
+              <Plus className="h-4 w-4" /> Add subject
+            </Button>
+          </div>
+        }
+      />
 
-      {error && (
-        <div className="text-sm text-[hsl(var(--destructive))] bg-[hsl(var(--destructive))]/10 px-3 py-2 rounded border border-[hsl(var(--destructive))]/20">
-          {error}
-        </div>
-      )}
+      {error && <ErrorBanner message={error} />}
 
       {showAddSubject && (
         <Card>
@@ -215,11 +214,11 @@ export default function SyllabusPage() {
                   onChange={(e) => setSubjectDescription(e.target.value)}
                 />
               </div>
-              <div className="flex gap-2">
-                <Button type="submit" disabled={saving || !subjectName.trim()}>
+              <div className="flex gap-2 sm:flex-col sm:w-full">
+                <Button type="submit" disabled={saving || !subjectName.trim()} className="flex-1 sm:w-full">
                   {saving ? "Adding…" : "Add subject"}
                 </Button>
-                <Button type="button" variant="outline" onClick={() => setShowAddSubject(false)}>
+                <Button type="button" variant="outline" onClick={() => setShowAddSubject(false)} className="flex-1 sm:w-full">
                   Cancel
                 </Button>
               </div>
@@ -228,45 +227,48 @@ export default function SyllabusPage() {
         </Card>
       )}
 
-      <div className="h-1 bg-[hsl(var(--border))]" />
-
       {workspace.subjects.length === 0 ? (
         <Card>
-          <CardContent className="text-center py-10">
-            <p className="text-sm text-[hsl(var(--muted-foreground))]">
-              No subjects yet. Add your first subject to start building the syllabus.
-            </p>
-          </CardContent>
+          <EmptyState
+            title="No subjects yet"
+            description="Add your first subject to start building the syllabus."
+            actions={
+              <Button onClick={() => setShowAddSubject(true)}>Add subject</Button>
+            }
+          />
         </Card>
       ) : (
         <div className="space-y-6">
           {workspace.subjects.map((subject, subjectIndex) => (
             <Card key={subject.id} className="overflow-hidden">
               <CardHeader className="pb-3">
-                <div className="flex items-start justify-between gap-3">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                   <div className="flex flex-wrap items-center gap-2 min-w-0">
                     <span className="text-xs font-medium text-[hsl(var(--muted-foreground))] uppercase tracking-wider">
                       Subject {subjectIndex + 1}
                     </span>
                     <CardTitle className="text-base">{subject.name}</CardTitle>
                     {subject.description && (
-                      <span className="text-xs text-[hsl(var(--muted-foreground))]">
+                      <span className="text-xs text-[hsl(var(--muted-foreground))] truncate">
                         · {subject.description}
                       </span>
                     )}
                   </div>
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    onClick={() => {
-                      setAddingChapterFor(addingChapterFor === subject.id ? "" : subject.id);
-                      setChapterName("");
-                      setAddingTopicFor("");
-                    }}
-                  >
-                    <Plus className="h-3.5 w-3.5" /> Add chapter
-                  </Button>
+                  <div className="flex items-center gap-2 w-full sm:w-auto">
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        setAddingChapterFor(addingChapterFor === subject.id ? "" : subject.id);
+                        setChapterName("");
+                        setAddingTopicFor("");
+                      }}
+                      className="w-full sm:w-auto"
+                    >
+                      <Plus className="h-3.5 w-3.5" /> Add chapter
+                    </Button>
+                  </div>
                 </div>
               </CardHeader>
               <CardContent className="pt-0">
@@ -281,15 +283,16 @@ export default function SyllabusPage() {
                       placeholder="Chapter name"
                       value={chapterName}
                       onChange={(e) => setChapterName(e.target.value)}
+                      className="flex-1"
                     />
-                    <div className="flex gap-2">
-                      <Button type="submit" size="sm" disabled={savingItem || !chapterName.trim()}>
+                    <div className="flex gap-2 w-full sm:w-auto">
+                      <Button type="submit" size="sm" disabled={savingItem || !chapterName.trim()} className="flex-1 sm:w-auto">
                         {savingItem ? "Adding…" : "Add"}
                       </Button>
                       <Button type="button" size="sm" variant="outline" onClick={() => {
                         setAddingChapterFor("");
                         setChapterName("");
-                      }}>
+                      }} className="flex-1 sm:w-auto">
                         Cancel
                       </Button>
                     </div>
@@ -305,7 +308,7 @@ export default function SyllabusPage() {
                     <div key={chapter.id} className="border-l border-[hsl(var(--border))] pl-4">
                       <div className="flex items-center gap-2 mb-2">
                         <ChevronRight className="h-4 w-4 text-[hsl(var(--muted-foreground))]" />
-                        <span className="text-sm font-medium">{chapter.name}</span>
+                        <span className="text-sm font-medium truncate">{chapter.name}</span>
                         <div className="ml-auto flex items-center gap-3">
                           <span className="text-xs text-[hsl(var(--muted-foreground))]">
                             {chapter.topics.length} topics
@@ -317,7 +320,20 @@ export default function SyllabusPage() {
                               setTopicName("");
                               setAddingChapterFor("");
                             }}
-                            className="flex items-center gap-1 text-xs text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--primary))]"
+                            className="flex items-center gap-1 text-xs text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--primary))] sm:hidden"
+                            title="Add topic"
+                          >
+                            <Plus className="h-3 w-3" /> Add topic
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setAddingTopicFor(addingTopicFor === chapter.id ? "" : chapter.id);
+                              setTopicName("");
+                              setAddingChapterFor("");
+                            }}
+                            className="hidden sm:flex items-center gap-1 text-xs text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--primary))]"
+                            title="Add topic"
                           >
                             <Plus className="h-3 w-3" /> Add topic
                           </button>
@@ -336,17 +352,19 @@ export default function SyllabusPage() {
                               <button
                                 key={topic.id}
                                 type="button"
-                                className="w-full flex items-center justify-between text-left hover:bg-[hsl(var(--secondary))]/50 rounded-md px-3 py-2 transition-colors"
+                                className="w-full flex items-center justify-between text-left hover:bg-[hsl(var(--secondary))]/50 rounded-md px-3 py-2 transition-colors sm:flex-row sm:gap-2"
                                 onClick={() => cycleStatus(topic.id)}
                                 title="Click to cycle topic status"
+                                aria-label={`Set ${topic.name} to ${status}`}
                               >
                                 <span className="flex items-center gap-2 min-w-0">
                                   <span
                                     className={`w-2 h-2 rounded-full ${statusDotClass(status)}`}
+                                    aria-hidden="true"
                                   />
                                   <span className="text-sm truncate">{topic.name}</span>
                                   {topic.description && (
-                                    <span className="text-xs text-[hsl(var(--muted-foreground))] ml-1 truncate">
+                                    <span className="text-xs text-[hsl(var(--muted-foreground))] ml-1 truncate sm:ml-2">
                                       {topic.description}
                                     </span>
                                   )}
@@ -370,15 +388,16 @@ export default function SyllabusPage() {
                             placeholder="Topic name"
                             value={topicName}
                             onChange={(e) => setTopicName(e.target.value)}
+                            className="flex-1"
                           />
-                          <div className="flex gap-2">
-                            <Button type="submit" size="sm" disabled={savingItem || !topicName.trim()}>
+                          <div className="flex gap-2 w-full sm:w-auto">
+                            <Button type="submit" size="sm" disabled={savingItem || !topicName.trim()} className="flex-1 sm:w-auto">
                               {savingItem ? "Adding…" : "Add"}
                             </Button>
                             <Button type="button" size="sm" variant="outline" onClick={() => {
                               setAddingTopicFor("");
                               setTopicName("");
-                            }}>
+                            }} className="flex-1 sm:w-auto">
                               Cancel
                             </Button>
                           </div>

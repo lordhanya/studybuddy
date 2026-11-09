@@ -4,6 +4,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import PageHeader from "@/components/PageHeader";
+import EmptyState from "@/components/EmptyState";
+import ErrorBanner from "@/components/ErrorBanner";
 import { Plus, Users } from "lucide-react";
 
 export default function GroupsPage() {
@@ -61,7 +64,7 @@ export default function GroupsPage() {
 
   if (loading) {
     return (
-      <div className="flex h-full items-center justify-center text-[hsl(var(--muted-foreground))]">
+      <div className="flex min-h-[60vh] items-center justify-center text-[hsl(var(--muted-foreground))]">
         Loading groups…
       </div>
     );
@@ -69,28 +72,22 @@ export default function GroupsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-4">
-        <div>
-          <h2 className="text-lg font-semibold tracking-tight">Study Groups</h2>
-          <p className="text-sm text-[hsl(var(--muted-foreground))]">
-            Create or join groups to study together and compare progress.
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <Button onClick={() => setCreateMode(true)}>
-            <Plus className="h-4 w-4 shrink-0" /> Create group
-          </Button>
-          <Button variant="outline" onClick={() => setJoinMode(true)}>
-            Join by invite code
-          </Button>
-        </div>
-      </div>
+      <PageHeader
+        title="Study Groups"
+        description="Create or join groups to study together and compare progress."
+        actions={
+          <div className="flex gap-2 sm:flex-col sm:w-full">
+            <Button className="w-auto sm:w-full" onClick={() => setCreateMode(true)}>
+              <Plus className="h-4 w-4 shrink-0" /> Create group
+            </Button>
+            <Button variant="outline" className="w-auto sm:w-full" onClick={() => setJoinMode(true)}>
+              Join by invite code
+            </Button>
+          </div>
+        }
+      />
 
-      {error && (
-        <div className="text-sm text-[hsl(var(--destructive))] bg-[hsl(var(--destructive))]/10 px-3 py-2 rounded border border-[hsl(var(--destructive))]/20">
-          {error}
-        </div>
-      )}
+      {error && <ErrorBanner message={error} />}
 
       {createMode && (
         <Card>
@@ -154,7 +151,7 @@ export default function GroupsPage() {
       )}
 
       {!createMode && !joinMode && (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {groups.length ? (
             groups.map((g) => (
               <Card key={g.id}>
@@ -170,7 +167,7 @@ export default function GroupsPage() {
                 </CardHeader>
                 <CardContent>
                   {g.description && (
-                    <p className="text-sm text-[hsl(var(--muted-foreground))] mb-3">
+                    <p className="text-sm text-[hsl(var(--muted-foreground))] mb-3 line-clamp-2">
                       {g.description}
                     </p>
                   )}
@@ -193,13 +190,21 @@ export default function GroupsPage() {
             ))
           ) : (
             <Card>
-              <CardContent className="text-center py-12">
-                <Users className="h-10 w-10 mx-auto text-[hsl(var(--muted-foreground))] mb-3" />
-                <p className="text-sm text-[hsl(var(--muted-foreground))]">No groups yet.</p>
-                <p className="text-xs text-[hsl(var(--muted-foreground))] mt-1">
-                  Create one to get started.
-                </p>
-              </CardContent>
+              <EmptyState
+                icon={Users}
+                title="No groups yet"
+                description="Create one to get started, or join with an invite code."
+                actions={
+                  <div className="flex flex-col gap-2 w-full sm:flex-row sm:w-auto justify-center">
+                    <Button className="w-full sm:w-auto" onClick={() => setCreateMode(true)}>
+                      Create group
+                    </Button>
+                    <Button variant="outline" className="w-full sm:w-auto" onClick={() => setJoinMode(true)}>
+                      Join by invite code
+                    </Button>
+                  </div>
+                }
+              />
             </Card>
           )}
         </div>

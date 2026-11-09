@@ -6,6 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import PageHeader from "@/components/PageHeader";
+import EmptyState from "@/components/EmptyState";
+import ErrorBanner from "@/components/ErrorBanner";
 import { Plus, BookOpen, Users } from "lucide-react";
 
 export default function WorkspacesPage() {
@@ -36,7 +39,7 @@ export default function WorkspacesPage() {
       setWorkspaces(ws || []);
       setGroups(gs || []);
     } catch (e) {
-      console.error(e);
+      setError(e.message || "Failed to load workspaces");
     } finally {
       setLoading(false);
     }
@@ -57,7 +60,7 @@ export default function WorkspacesPage() {
 
   if (loading) {
     return (
-      <div className="flex h-full items-center justify-center text-[hsl(var(--muted-foreground))]">
+      <div className="flex min-h-[60vh] items-center justify-center text-[hsl(var(--muted-foreground))]">
         Loading…
       </div>
     );
@@ -65,23 +68,17 @@ export default function WorkspacesPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-4">
-        <div>
-          <h2 className="text-lg font-semibold tracking-tight">Workspaces</h2>
-          <p className="text-sm text-[hsl(var(--muted-foreground))]">
-            A workspace holds one exam syllabus within a study group.
-          </p>
-        </div>
-        <Button onClick={() => setCreating(true)}>
-          <Plus className="h-4 w-4 shrink-0" /> New workspace
-        </Button>
-      </div>
+      <PageHeader
+        title="Workspaces"
+        description="A workspace holds one exam syllabus within a study group."
+        actions={
+          <Button onClick={() => setCreating(true)}>
+            <Plus className="h-4 w-4 shrink-0" /> New workspace
+          </Button>
+        }
+      />
 
-      {error && (
-        <div className="text-sm text-[hsl(var(--destructive))] bg-[hsl(var(--destructive))]/10 px-3 py-2 rounded border border-[hsl(var(--destructive))]/20">
-          {error}
-        </div>
-      )}
+      {error && <ErrorBanner message={error} onRetry={loadData} />}
 
       {creating && (
         <Card>
@@ -144,9 +141,9 @@ export default function WorkspacesPage() {
                   onChange={(e) => setForm({ ...form, description: e.target.value })}
                 />
               </div>
-              <div className="flex gap-2">
-                <Button type="submit" className="flex-1">Create workspace</Button>
-                <Button variant="outline" type="button" onClick={() => setCreating(false)}>
+              <div className="flex gap-2 sm:flex-col sm:w-full">
+                <Button type="submit" className="flex-1 sm:w-full">Create workspace</Button>
+                <Button variant="outline" type="button" onClick={() => setCreating(false)} className="flex-1 sm:w-full">
                   Cancel
                 </Button>
               </div>
@@ -155,23 +152,25 @@ export default function WorkspacesPage() {
         </Card>
       )}
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {workspaces.length ? (
           workspaces.map((w) => (
             <Card key={w.id}>
-              <CardHeader className="flex flex-row items-start justify-between gap-2 pb-3">
-                <div>
+              <CardHeader className="pb-3 flex flex-row items-start justify-between gap-2 sm:flex-col sm:items-start sm:gap-2">
+                <div className="flex-1 min-w-0">
                   <CardTitle className="text-base">{w.name}</CardTitle>
                   <div className="flex items-center gap-1.5 text-xs text-[hsl(var(--muted-foreground))] mt-1">
                     <Users className="h-3 w-3 shrink-0" />
-                    <span>{w.group.name}</span>
+                    <span className="truncate">{w.group.name}</span>
                   </div>
                 </div>
-                <Badge variant="outline" className="text-xs">{w.examType} {w.examYear}</Badge>
+                <Badge variant="outline" className="text-xs shrink-0">
+                  {w.examType} {w.examYear}
+                </Badge>
               </CardHeader>
               <CardContent>
                 {w.description && (
-                  <p className="text-sm text-[hsl(var(--muted-foreground))] mb-4">
+                  <p className="text-sm text-[hsl(var(--muted-foreground))] mb-4 line-clamp-2">
                     {w.description}
                   </p>
                 )}
@@ -179,10 +178,7 @@ export default function WorkspacesPage() {
                   <span className="text-[hsl(var(--muted-foreground))]">
                     {w._count.subjects} subject{w._count.subjects !== 1 ? "s" : ""}
                   </span>
-                  <Button
-                    size="sm"
-                    onClick={() => navigate(`/workspaces/${w.id}/syllabus`)}
-                  >
+                  <Button size="sm" onClick={() => navigate(`/workspaces/${w.id}/syllabus`)}>
                     Open syllabus
                   </Button>
                 </div>
@@ -191,13 +187,14 @@ export default function WorkspacesPage() {
           ))
         ) : (
           <Card>
-            <CardContent className="text-center py-12">
-              <BookOpen className="h-10 w-10 mx-auto text-[hsl(var(--muted-foreground))] mb-3" />
-              <p className="text-sm text-[hsl(var(--muted-foreground))]">No workspaces yet.</p>
-              <p className="text-xs text-[hsl(var(--muted-foreground))] mt-1">
-                Create one to start tracking a syllabus.
-              </p>
-            </CardContent>
+            <EmptyState
+              icon={BookOpen}
+              title="No workspaces yet"
+              description="Create one to start tracking a syllabus."
+              actions={
+                <Button onClick={() => setCreating(true)}>Create workspace</Button>
+              }
+            />
           </Card>
         )}
       </div>

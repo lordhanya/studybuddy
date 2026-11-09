@@ -4,6 +4,9 @@ import { useAuth } from "@/contexts/AuthContext";
 import { api } from "@/services/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import PageHeader from "@/components/PageHeader";
+import EmptyState from "@/components/EmptyState";
+import ErrorBanner from "@/components/ErrorBanner";
 import {
   Activity,
   BookOpen,
@@ -67,7 +70,7 @@ export default function DashboardPage() {
 
   if (loading) {
     return (
-      <div className="flex h-full items-center justify-center text-[hsl(var(--muted-foreground))]">
+      <div className="flex min-h-[60vh] items-center justify-center text-[hsl(var(--muted-foreground))]">
         Loading…
       </div>
     );
@@ -82,26 +85,25 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-4">
-        <div>
-          <h2 className="text-lg font-semibold tracking-tight">Dashboard</h2>
-          <p className="text-sm text-[hsl(var(--muted-foreground))]">
-            Welcome back, {user?.fullName}. Here's your progress at a glance.
-          </p>
-        </div>
-        <Button variant="outline" size="sm" onClick={refresh} disabled={refreshing}>
-          <RefreshCw className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`} />
-          {refreshing ? "Refreshing…" : "Refresh"}
-        </Button>
-      </div>
+      <PageHeader
+        title="Dashboard"
+        description={`Welcome back, {user?.fullName}. Here's your progress at a glance.`}
+        actions={
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={refresh}
+            disabled={refreshing}
+          >
+            <RefreshCw className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`} />
+            {refreshing ? "Refreshing…" : "Refresh"}
+          </Button>
+        }
+      />
 
-      {error && (
-        <div className="text-sm text-[hsl(var(--destructive))] bg-[hsl(var(--destructive))]/10 px-3 py-2 rounded border border-[hsl(var(--destructive))]/20">
-          {error}
-        </div>
-      )}
+      {error && <ErrorBanner message={error} onRetry={loadDashboard} />}
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {cards.map((card) => {
           const Icon = card.icon;
           return (
@@ -127,7 +129,7 @@ export default function DashboardPage() {
       <div className="grid gap-6 lg:grid-cols-12">
         <div className="lg:col-span-8">
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-3">
+            <CardHeader className="pb-3 flex items-center justify-between">
               <CardTitle className="text-base">Recent activity</CardTitle>
               <Button variant="outline" size="sm" onClick={() => navigate("/activity")}>
                 View all
@@ -162,14 +164,11 @@ export default function DashboardPage() {
                     );
                   })
                 ) : (
-                  <div className="text-center py-10">
-                    <p className="text-sm text-[hsl(var(--muted-foreground))]">
-                      No recent activity yet.
-                    </p>
-                    <p className="text-xs text-[hsl(var(--muted-foreground))] mt-1">
-                      Start by joining a group and tracking topics.
-                    </p>
-                  </div>
+                  <EmptyState
+                    icon={Activity}
+                    title="No recent activity yet"
+                    description="Start by joining a group and tracking topics."
+                  />
                 )}
               </div>
             </CardContent>

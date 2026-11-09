@@ -30,11 +30,57 @@ const NAV = [
   { href: "/analytics", label: "Analytics", icon: BarChart3 },
 ];
 
+const isMobile = () => typeof window !== "undefined" && window.innerWidth < 1024;
+
 export default function AppLayout() {
   const { user, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
-  const [sidebarOpen, setSidebarOpen] = useState(true);
   const location = useLocation();
+
+  const [sidebarOpen, setSidebarOpen] = useState(!isMobile());
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return localStorage.getItem("sb-sidebar-collapsed") === "true";
+  });
+
+  // Persist desktop collapsed preference.
+  useEffect(() => {
+    if (!isMobile()) {
+      localStorage.setItem("sb-sidebar-collapsed", String(sidebarCollapsed));
+    }
+  }, [sidebarCollapsed]);
+
+  // Reopen sidebar when resizing back to desktop.
+  useEffect(() => {
+    const handleResize = () => {
+      if (!isMobile()) setSidebarOpen(true);
+    };
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  // Close mobile drawer on Escape.
+  useEffect(() => {
+    const handleKey = (e) => {
+      if (e.key === "Escape" && sidebarOpen && isMobile()) setSidebarOpen(false);
+    };
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, [sidebarOpen]);
+
+  // Close mobile drawer on route change; lock body scroll while open.
+  useEffect(() => {
+    if (isMobile()) setSidebarOpen(false);
+
+    if (sidebarOpen && isMobile()) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [location.pathname, sidebarOpen]);
 
   const isActive = (href) =>
     location.pathname === href || location.pathname.startsWith(`${href}/`);
@@ -50,7 +96,7 @@ export default function AppLayout() {
       aria-label="Toggle theme"
     >
       {themeIcon}
-      {labelVisible && <span>{themeLabel}</span>}
+      {labelVisible && <span className="text-sm">{themeLabel}</span>}
     </button>
   );
 
@@ -61,31 +107,58 @@ export default function AppLayout() {
       className="mt-2 flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--secondary))] transition-colors"
     >
       <LogOut className="h-4 w-4" />
-      {labelVisible && "Sign out"}
+      {labelVisible && <span className="text-sm">Sign out</span>}
     </button>
   );
 
   return (
-    <div className="flex h-[100dvh] flex-col lg:flex-row overflow-hidden">
+    <div className="flex h-[100dvh] flex-col lg:flex-row overflow-hidden relative">
+      {/* Mobile backdrop */}
+      {sidebarOpen && isMobile() && (
+        <div
+          className="lg:hidden fixed inset-0 bg-black/40 backdrop-blur-sm z-40"
+          onClick={() => setSidebarOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+
       {/* Sidebar */}
       <aside
-        className={`lg:flex-shrink-0 border-r border-[hsl(var(--border))] bg-[hsl(var(--card))] transition-all duration-300 ${
-          sidebarOpen ? "w-64" : "w-20"
-        }`}
+        className={`
+          fixed lg:static inset-y-0 left-0 z-50 w-64
+          transform transition-transform duration-300 ease-in-out
+          ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}
+          border-r border-[hsl(var(--border))] bg-[hsl(var(--card))]
+          lg:translate-x-0 lg:border-r lg:${sidebarCollapsed ? "w-20" : "w-64"}
+        `}
       >
-        <div className="flex h-14 items-center justify-between px-3 border-b border-[hsl(var(--border))] bg-[hsl(var(--card))]">
+        <div className="flex h-12 sm:h-14 items-center justify-between px-3 sm:px-4 border-b border-[hsl(var(--border))] bg-[hsl(var(--card))]">
           <Link to="/dashboard" className="flex items-center gap-2.5">
             <BookOpen className="h-5 w-5 text-[hsl(var(--primary))]" />
-            <span className={sidebarOpen ? "font-semibold text-sm tracking-tight" : "sr-only"}>
+            <span
+              className={
+                !sidebarCollapsed ? "font-semibold text-sm tracking-tight" : "sr-only"
+              }
+            >
               StudyBuddy
             </span>
           </Link>
-          {sidebarOpen && (
+          {!sidebarCollapsed && (
             <button
               type="button"
-              onClick={() => setSidebarOpen(false)}
-              className="ml-auto rounded-md p-1.5 text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--secondary))] transition-colors"
+              onClick={() => setSidebarCollapsed((prev) => !prev)}
+              className="ml-auto rounded-md p-1.5 text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--secondary))] transition-colors lg:hidden"
               aria-label="Collapse sidebar"
+            >
+              <Menu className="h-5 w-5" />
+            </button>
+          )}
+          {sidebarCollapsed && !isMobile() && (
+            <button
+              type="button"
+              onClick={() => setSidebarCollapsed(false)}
+              className="rounded-md p-1.5 text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--secondary))] transition-colors"
+              aria-label="Expand sidebar"
             >
               <Menu className="h-5 w-5" />
             </button>
@@ -96,6 +169,7 @@ export default function AppLayout() {
             {NAV.map((item) => {
               const Icon = item.icon;
               const active = isActive(item.href);
+              const showLabel = !sidebarCollapsed || isMobile();
               return (
                 <Link
                   key={item.href}
@@ -112,28 +186,30 @@ export default function AppLayout() {
                   `}
                 >
                   <Icon className="h-5 w-5 shrink-0" />
-                  {sidebarOpen && item.label}
+                  {showLabel && item.label}
                 </Link>
               );
             })}
           </nav>
         </div>
         <div className="p-3 border-t border-[hsl(var(--border))]">
-          {themeToggle(sidebarOpen)}
-          {sidebarOpen && signOutButton(true)}
+          {themeToggle(!sidebarCollapsed && !isMobile())}
+          {!isMobile() && signOutButton(!sidebarCollapsed)}
         </div>
       </aside>
 
       {/* Main content */}
       <div className="flex-1 flex flex-col min-w-0">
-        <header className="flex h-12 sm:h-16 items-center justify-between border-b border-[hsl(var(--border))] bg-[hsl(var(--background))]/40 px-3 sm:px-4 lg:px-6">
+        <header className="flex h-10 sm:h-14 items-center justify-between border-b border-[hsl(var(--border))] bg-[hsl(var(--background))]/40 px-3 sm:px-4 lg:px-6">
           <div className="flex items-center gap-3">
-            {!sidebarOpen && (
+            {isMobile() && (
               <button
                 type="button"
-                onClick={() => setSidebarOpen(true)}
+                onClick={() => setSidebarOpen((prev) => !prev)}
                 className="rounded-md p-1.5 text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--secondary))]"
-                aria-label="Expand sidebar"
+                aria-label={sidebarOpen ? "Close menu" : "Open menu"}
+                aria-expanded={sidebarOpen}
+                aria-controls="sidebar"
               >
                 <Menu className="h-5 w-5" />
               </button>
@@ -144,13 +220,15 @@ export default function AppLayout() {
           </div>
           <div className="flex items-center gap-2">
             {themeToggle(false)}
-            <div className="flex items-center gap-3 pl-2 border-l border-[hsl(var(--border))]">
-              <span className="hidden sm:block text-sm text-[hsl(var(--muted-foreground))]">
-                {user?.fullName}
-              </span>
+            <div className="flex items-center gap-2 pl-2 border-l border-[hsl(var(--border))]">
+              {!isMobile() && (
+                <span className="hidden sm:block text-sm text-[hsl(var(--muted-foreground))]">
+                  {user?.fullName}
+                </span>
+              )}
               <Button variant="outline" size="sm" onClick={logout}>
                 <LogOut className="h-4 w-4" />
-                {sidebarOpen && "Sign out"}
+                {!sidebarCollapsed && !isMobile() && "Sign out"}
               </Button>
             </div>
           </div>

@@ -1,10 +1,13 @@
 import { useEffect, useState, useCallback } from "react";
-import { Link } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { api } from "@/services/api";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import PageHeader from "@/components/PageHeader";
+import EmptyState from "@/components/EmptyState";
+import ErrorBanner from "@/components/ErrorBanner";
 import {
   MessageCircle,
   Flame,
@@ -46,6 +49,7 @@ const TYPE_ICONS = {
 
 export default function ActivityPage() {
   const { user } = useAuth();
+  const navigate = useNavigate();
 
   const [workspaces, setWorkspaces] = useState([]);
   const [workspaceId, setWorkspaceId] = useState("");
@@ -166,225 +170,209 @@ export default function ActivityPage() {
     });
 
   if (loading) {
-    return <div className="text-[hsl(var(--muted-foreground))]">Loading feed…</div>;
-  }
-
-  if (!workspaces.length) {
     return (
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-lg font-semibold">Activity</h1>
-          <p className="text-sm text-[hsl(var(--muted-foreground))]">
-            See what's happening in your study groups.
-          </p>
-        </div>
-        <Card>
-          <CardContent className="text-center py-10">
-            <MessageCircle className="h-10 w-10 mx-auto text-[hsl(var(--muted-foreground))] mb-3" />
-            <p className="text-sm text-[hsl(var(--muted-foreground))]">No workspace yet.</p>
-            <p className="text-xs text-[hsl(var(--muted-foreground))] mt-1 mb-4">
-              Create a workspace before posting activity.
-            </p>
-            <Button onClick={() => (window.location.href = "/workspaces")}>
-              <Plus className="h-4 w-4" /> Create a workspace
-            </Button>
-          </CardContent>
-        </Card>
+      <div className="flex min-h-[60vh] items-center justify-center text-[hsl(var(--muted-foreground))]">
+        Loading feed…
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-4">
-        <div>
-          <h1 className="text-lg font-semibold">Activity</h1>
-          <p className="text-sm text-[hsl(var(--muted-foreground))]">
-            See what's happening in your study groups.
-          </p>
-        </div>
-        <Link
-          to="/workspaces"
-          className="text-sm text-[hsl(var(--muted-foreground))] hover:underline"
-        >
-          ← Back to workspaces
-        </Link>
-      </div>
+      <PageHeader
+        title="Activity"
+        description="See what's happening in your study groups."
+        backLink="/workspaces"
+        backLabel="Back to workspaces"
+      />
 
-      {error && (
-        <div className="text-sm text-[hsl(var(--destructive))] bg-[hsl(var(--destructive))]/10 px-3 py-2 rounded border border-[hsl(var(--destructive))]/20">
-          {error}
-        </div>
-      )}
+      {!workspaces.length ? (
+        <Card>
+          <CardContent className="text-center py-10">
+            <EmptyState
+              icon={MessageCircle}
+              title="No workspace yet"
+              description="Create a workspace before posting activity."
+              actions={
+                <Button onClick={() => navigate("/workspaces")}>
+                  <Plus className="h-4 w-4" /> Create a workspace
+                </Button>
+              }
+            />
+          </CardContent>
+        </Card>
+      ) : (
+        <>
+          {error && <ErrorBanner message={error} />}
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Share an update</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4 pt-0">
-          <form onSubmit={handleCreate} className="space-y-4">
-            <div className="space-y-2">
-              <label
-                htmlFor="activityWorkspace"
-                className="block text-xs font-medium text-[hsl(var(--muted-foreground))]"
-              >
-                Workspace
-              </label>
-              <select
-                id="activityWorkspace"
-                value={workspaceId}
-                onChange={(e) => setWorkspaceId(e.target.value)}
-                className="w-full rounded-md border border-[hsl(var(--input))] bg-[hsl(var(--background))] px-3 py-2 text-sm"
-              >
-                {workspaces.map((workspace) => (
-                  <option key={workspace.id} value={workspace.id}>
-                    {workspace.name} ({workspace.examType} {workspace.examYear})
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="space-y-2">
-              <label
-                htmlFor="activityContent"
-                className="block text-xs font-medium text-[hsl(var(--muted-foreground))]"
-              >
-                What are you working on?
-              </label>
-              <textarea
-                id="activityContent"
-                value={newContent}
-                onChange={(e) => setNewContent(e.target.value)}
-                placeholder="e.g. Finished Linear Algebra chapter, completed 3 mock tests…"
-                rows={3}
-                className="w-full rounded-md border border-[hsl(var(--input))] bg-[hsl(var(--background))] px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))]"
-              />
-            </div>
-            <div className="flex items-center gap-3">
-              <span className="text-xs text-[hsl(var(--muted-foreground))]">Type:</span>
-              <select
-                value={newType}
-                onChange={(e) => setNewType(e.target.value)}
-                className="rounded-md border border-[hsl(var(--input))] bg-[hsl(var(--background))] px-3 py-2 text-sm"
-              >
-                {POST_TYPES.map((key) => (
-                  <option key={key} value={key}>
-                    {TYPE_LABELS[key]}
-                  </option>
-                ))}
-              </select>
-              <Button type="submit" disabled={creating || !newContent.trim()}>
-                {creating ? "Posting…" : "Post"}
-              </Button>
-            </div>
-          </form>
-        </CardContent>
-      </Card>
-
-      <div className="space-y-4">
-        {activities.length === 0 ? (
           <Card>
-            <CardContent className="text-center py-10">
-              <MessageCircle className="h-10 w-10 mx-auto text-[hsl(var(--muted-foreground))] mb-3" />
-              <p className="text-sm text-[hsl(var(--muted-foreground))]">No activity yet.</p>
-              <p className="text-xs text-[hsl(var(--muted-foreground))] mt-1">
-                Share your first study update to get started.
-              </p>
+            <CardContent className="pt-0">
+              <div className="px-4 sm:p-5 pb-4">
+                <CardTitle className="text-base mb-4 sm:mb-0">Share an update</CardTitle>
+                <form onSubmit={handleCreate} className="space-y-4">
+                  <div className="space-y-2">
+                    <label
+                      htmlFor="activityWorkspace"
+                      className="block text-xs font-medium text-[hsl(var(--muted-foreground))]"
+                    >
+                      Workspace
+                    </label>
+                    <select
+                      id="activityWorkspace"
+                      value={workspaceId}
+                      onChange={(e) => setWorkspaceId(e.target.value)}
+                      className="w-full rounded-md border border-[hsl(var(--input))] bg-[hsl(var(--background))] px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))]"
+                    >
+                      {workspaces.map((workspace) => (
+                        <option key={workspace.id} value={workspace.id}>
+                          {workspace.name} ({workspace.examType} {workspace.examYear})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="space-y-2">
+                    <label
+                      htmlFor="activityContent"
+                      className="block text-xs font-medium text-[hsl(var(--muted-foreground))]"
+                    >
+                      What are you working on?
+                    </label>
+                    <textarea
+                      id="activityContent"
+                      value={newContent}
+                      onChange={(e) => setNewContent(e.target.value)}
+                      placeholder="e.g. Finished Linear Algebra chapter, completed 3 mock tests…"
+                      rows={3}
+                      className="w-full rounded-md border border-[hsl(var(--input))] bg-[hsl(var(--background))] px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))]"
+                    />
+                  </div>
+                  <div className="flex flex-col sm:flex-row gap-3 items-end sm:items-center">
+                    <span className="text-xs text-[hsl(var(--muted-foreground))]">Type:</span>
+                    <select
+                      value={newType}
+                      onChange={(e) => setNewType(e.target.value)}
+                      className="w-full sm:w-auto rounded-md border border-[hsl(var(--input))] bg-[hsl(var(--background))] px-3 py-2 text-sm"
+                    >
+                      {POST_TYPES.map((key) => (
+                        <option key={key} value={key}>
+                          {TYPE_LABELS[key]}
+                        </option>
+                      ))}
+                    </select>
+                    <Button type="submit" disabled={creating || !newContent.trim()} className="w-full sm:w-auto">
+                      {creating ? "Posting…" : "Post"}
+                    </Button>
+                  </div>
+                </form>
+              </div>
             </CardContent>
           </Card>
-        ) : (
-          activities.map((activity) => {
-            const Icon = TYPE_ICONS[activity.type] || MessageCircle;
-            const reactions = activity.reactions || [];
-            const comments = activity.comments || [];
-            return (
-              <Card key={activity.id}>
-                <CardContent className="pt-5 pb-4">
-                  <div className="flex items-start gap-3">
-                    <div className="w-8 h-8 rounded bg-[hsl(var(--secondary))] flex items-center justify-center shrink-0">
-                      <Icon className="h-4 w-4" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex flex-wrap items-center gap-2 text-xs mb-1">
-                        <span className="font-medium">
-                          {activity.user?.fullName || "Unknown"}
-                        </span>
-                        <Badge variant="outline" className="text-[10px]">
-                          {TYPE_LABELS[activity.type] || activity.type}
-                        </Badge>
-                        <span className="text-[hsl(var(--muted-foreground))]">
-                          {formatTime(activity.createdAt)}
-                        </span>
-                      </div>
-                      <p className="text-sm mb-3">{activity.content}</p>
 
-                      <div className="flex items-center gap-4 mb-3 border-t border-[hsl(var(--input))] pt-2">
-                        {["🔥", "👍", "⭐", "✅"].map((emoji) => {
-                          const reacted = reactions.some(
-                            (reaction) =>
-                              reaction.userId === user?.id && reaction.type === emoji
-                          );
-                          const count = reactions.filter(
-                            (reaction) => reaction.type === emoji
-                          ).length;
-                          return (
-                            <button
-                              key={emoji}
-                              type="button"
-                              onClick={() => handleReaction(activity.id, emoji)}
-                              className={`flex items-center gap-1 px-2 py-1.5 rounded-md text-xs transition-colors ${
-                                reacted
-                                  ? "bg-[hsl(var(--accent))] text-[hsl(var(--accent-foreground))]"
-                                  : "text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--secondary))]"
-                              }`}
-                            >
-                              {emoji} <span className="font-medium">{count}</span>
-                            </button>
-                          );
-                        })}
-                      </div>
-
-                      <div className="space-y-2">
-                        {comments.map((comment) => (
-                          <div key={comment.id} className="flex items-start gap-2 text-sm">
-                            <span className="text-[hsl(var(--muted-foreground))]">
-                              {comment.user?.fullName || "Unknown"}:
-                            </span>
-                            <span>{comment.content}</span>
-                          </div>
-                        ))}
-                        {commentingOn === activity.id ? (
-                          <form
-                            onSubmit={(e) => handleCommentAdd(activity.id, e)}
-                            className="flex gap-2"
-                          >
-                            <input
-                              value={newComment}
-                              onChange={(e) => setNewComment(e.target.value)}
-                              placeholder="Write a comment…"
-                              className="flex-1 rounded-md border border-[hsl(var(--input))] bg-[hsl(var(--background))] px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))]"
-                            />
-                            <Button type="submit" size="sm" disabled={!newComment.trim()}>
-                              Post
-                            </Button>
-                          </form>
-                        ) : (
-                          <button
-                            type="button"
-                            onClick={() => setCommentingOn(activity.id)}
-                            className="text-xs text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--primary))] underline"
-                          >
-                            Add a comment
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
+          <div className="space-y-4">
+            {activities.length === 0 ? (
+              <Card>
+                <EmptyState
+                  icon={MessageCircle}
+                  title="No activity yet"
+                  description="Share your first study update to get started."
+                />
               </Card>
-            );
-          })
-        )}
-      </div>
+            ) : (
+              activities.map((activity) => {
+                const Icon = TYPE_ICONS[activity.type] || MessageCircle;
+                const reactions = activity.reactions || [];
+                const comments = activity.comments || [];
+                return (
+                  <Card key={activity.id}>
+                    <CardContent className="pt-5 pb-4">
+                      <div className="flex items-start gap-3">
+                        <div className="w-8 h-8 rounded bg-[hsl(var(--secondary))] flex items-center justify-center shrink-0">
+                          <Icon className="h-4 w-4" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex flex-wrap items-center gap-2 text-xs mb-1">
+                            <span className="font-medium">
+                              {activity.user?.fullName || "Unknown"}
+                            </span>
+                            <Badge variant="outline" className="text-[10px]">
+                              {TYPE_LABELS[activity.type] || activity.type}
+                            </Badge>
+                            <span className="text-[hsl(var(--muted-foreground))]">
+                              {formatTime(activity.createdAt)}
+                            </span>
+                          </div>
+                          <p className="text-sm mb-3 break-words">{activity.content}</p>
+
+                          <div className="flex items-center gap-4 mb-3 border-t border-[hsl(var(--input))] pt-2 flex-wrap">
+                            {["🔥", "👍", "⭐", "✅"].map((emoji) => {
+                              const reacted = reactions.some(
+                                (reaction) =>
+                                  reaction.userId === user?.id && reaction.type === emoji
+                              );
+                              const count = reactions.filter(
+                                (reaction) => reaction.type === emoji
+                              ).length;
+                              return (
+                                <button
+                                  key={emoji}
+                                  type="button"
+                                  onClick={() => handleReaction(activity.id, emoji)}
+                                  className={`flex items-center gap-1 px-2 py-1.5 rounded-md text-xs transition-colors ${
+                                    reacted
+                                      ? "bg-[hsl(var(--accent))] text-[hsl(var(--accent-foreground))]"
+                                      : "text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--secondary))]"
+                                  }`}
+                                >
+                                  {emoji} <span className="font-medium">{count}</span>
+                                </button>
+                              );
+                            })}
+                          </div>
+
+                          <div className="space-y-2">
+                            {comments.map((comment) => (
+                              <div key={comment.id} className="flex items-start gap-2 text-sm">
+                                <span className="text-[hsl(var(--muted-foreground))]">
+                                  {comment.user?.fullName || "Unknown"}:
+                                </span>
+                                <span className="break-words">{comment.content}</span>
+                              </div>
+                            ))}
+                            {commentingOn === activity.id ? (
+                              <form
+                                onSubmit={(e) => handleCommentAdd(activity.id, e)}
+                                className="flex gap-2 flex-col sm:flex-row"
+                              >
+                                <input
+                                  value={newComment}
+                                  onChange={(e) => setNewComment(e.target.value)}
+                                  placeholder="Write a comment…"
+                                  className="flex-1 w-full sm:w-auto rounded-md border border-[hsl(var(--input))] bg-[hsl(var(--background))] px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))]"
+                                />
+                                <Button type="submit" size="sm" disabled={!newComment.trim()} className="w-full sm:w-auto">
+                                  Post
+                                </Button>
+                              </form>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => setCommentingOn(activity.id)}
+                                className="text-xs text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--primary))] underline"
+                              >
+                                Add a comment
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })
+            )}
+          </div>
+        </>
+      )}
     </div>
   );
 }

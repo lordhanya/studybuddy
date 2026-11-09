@@ -1,11 +1,14 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { api } from "@/services/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import PageHeader from "@/components/PageHeader";
+import EmptyState from "@/components/EmptyState";
+import ErrorBanner from "@/components/ErrorBanner";
 import { Target, Trash2 } from "lucide-react";
 
 const STATUS_CONFIG = {
@@ -15,6 +18,7 @@ const STATUS_CONFIG = {
 };
 
 export default function GoalsPage() {
+  const navigate = useNavigate();
   const [goals, setGoals] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -41,7 +45,7 @@ export default function GoalsPage() {
       setGoals(Array.isArray(gs) ? gs : []);
       setWorkspaces(Array.isArray(ws) ? ws : []);
     } catch (e) {
-      console.error(e);
+      setError(e.message || "Failed to load goals");
     } finally {
       setLoading(false);
     }
@@ -91,7 +95,7 @@ export default function GoalsPage() {
 
   if (loading) {
     return (
-      <div className="flex h-full items-center justify-center text-[hsl(var(--muted-foreground))]">
+      <div className="flex min-h-[60vh] items-center justify-center text-[hsl(var(--muted-foreground))]">
         Loading goals…
       </div>
     );
@@ -103,19 +107,16 @@ export default function GoalsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-4">
-        <div>
-          <h2 className="text-lg font-semibold tracking-tight">Study Goals</h2>
-          <p className="text-sm text-[hsl(var(--muted-foreground))]">
-            Set personal and shared study targets. Track your progress over time.
-          </p>
-        </div>
-        <Link to="/workspaces" className="text-sm text-[hsl(var(--muted-foreground))] hover:underline">
-          ← Back to workspaces
-        </Link>
-      </div>
+      <PageHeader
+        title="Study Goals"
+        description="Set personal and shared study targets. Track your progress over time."
+        backLink="/workspaces"
+        backLabel="Back to workspaces"
+      />
 
-      <div className="grid gap-4 md:grid-cols-3">
+      {error && <ErrorBanner message={error} onRetry={loadData} />}
+
+      <div className="grid gap-4 sm:grid-cols-3 lg:grid-cols-3">
         <Card>
           <CardContent className="pt-6 pb-5">
             <div className="text-2xl font-bold">{goals.length}</div>
@@ -136,19 +137,13 @@ export default function GoalsPage() {
         </Card>
       </div>
 
-      {error && (
-        <div className="text-sm text-[hsl(var(--destructive))] bg-[hsl(var(--destructive))]/10 px-3 py-2 rounded border border-[hsl(var(--destructive))]/20">
-          {error}
-        </div>
-      )}
-
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-base">Create a new goal</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4 pt-0">
           <form onSubmit={handleCreate}>
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               <div className="space-y-2">
                 <Label htmlFor="goalTitle">Goal title</Label>
                 <Input
@@ -159,7 +154,7 @@ export default function GoalsPage() {
                   onChange={(e) => setForm({ ...form, title: e.target.value })}
                 />
               </div>
-              <div className="space-y-2 md:col-span-2 lg:col-span-2">
+              <div className="space-y-2 sm:col-span-2 lg:col-span-2">
                 <Label htmlFor="goalDesc">Description</Label>
                 <Input
                   id="goalDesc"
@@ -207,20 +202,20 @@ export default function GoalsPage() {
                 </select>
               </div>
             </div>
-            <Button type="submit" disabled={creating || !form.title.trim()} className="mt-2">
+            <Button type="submit" disabled={creating || !form.title.trim()} className="mt-2 w-full sm:w-auto">
               {creating ? "Creating…" : "Create goal"}
             </Button>
           </form>
         </CardContent>
       </Card>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {goals.length ? (
           goals.map((goal) => {
             const cfg = STATUS_CONFIG[goal.status] || STATUS_CONFIG.ACTIVE;
             return (
               <Card key={goal.id}>
-                <CardHeader className="pb-3 flex flex-row items-center justify-between">
+                <CardHeader className="pb-3 flex flex-row items-center justify-between sm:flex-col sm:items-start sm:gap-2">
                   <div className="flex-1 min-w-0">
                     <CardTitle className="text-base">{goal.title}</CardTitle>
                     {goal.description && (
@@ -244,7 +239,7 @@ export default function GoalsPage() {
                       Target: {new Date(goal.targetDate).toLocaleDateString()}
                     </p>
                   )}
-                  <div className="flex items-center gap-2 pt-3">
+                  <div className="flex items-center gap-2 pt-3 flex-wrap">
                     <Button
                       variant="outline"
                       size="sm"
@@ -257,7 +252,12 @@ export default function GoalsPage() {
                     >
                       {goal.status === "ACTIVE" ? "Mark complete" : "Reopen"}
                     </Button>
-                    <Button variant="outline" size="sm" onClick={() => handleDelete(goal.id)}>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleDelete(goal.id)}
+                      aria-label="Delete goal"
+                    >
                       <Trash2 className="h-3 w-3" />
                     </Button>
                   </div>
@@ -267,11 +267,11 @@ export default function GoalsPage() {
           })
         ) : (
           <Card>
-            <CardContent className="text-center py-12">
-              <Target className="h-10 w-10 mx-auto text-[hsl(var(--muted-foreground))] mb-3" />
-              <p className="text-sm text-[hsl(var(--muted-foreground))]">No goals yet.</p>
-              <p className="text-xs text-[hsl(var(--muted-foreground))] mt-1">Create your first study goal above.</p>
-            </CardContent>
+            <EmptyState
+              icon={Target}
+              title="No goals yet"
+              description="Create your first study goal above."
+            />
           </Card>
         )}
       </div>

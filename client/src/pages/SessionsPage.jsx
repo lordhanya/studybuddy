@@ -1,14 +1,18 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { api } from "@/services/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Clock, Trash2 } from "lucide-react";
+import PageHeader from "@/components/PageHeader";
+import EmptyState from "@/components/EmptyState";
+import ErrorBanner from "@/components/ErrorBanner";
+import { Clock, Trash2, Users } from "lucide-react";
 
 export default function SessionsPage() {
+  const navigate = useNavigate();
   const [sessions, setSessions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -34,7 +38,7 @@ export default function SessionsPage() {
       setSessions(Array.isArray(sess) ? sess : []);
       setWorkspaces(Array.isArray(ws) ? ws : []);
     } catch (e) {
-      console.error(e);
+      setError(e.message || "Failed to load sessions");
     } finally {
       setLoading(false);
     }
@@ -76,7 +80,7 @@ export default function SessionsPage() {
 
   if (loading) {
     return (
-      <div className="flex h-full items-center justify-center text-[hsl(var(--muted-foreground))]">
+      <div className="flex min-h-[60vh] items-center justify-center text-[hsl(var(--muted-foreground))]">
         Loading sessions…
       </div>
     );
@@ -84,19 +88,16 @@ export default function SessionsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-4">
-        <div>
-          <h2 className="text-lg font-semibold tracking-tight">Study Sessions</h2>
-          <p className="text-sm text-[hsl(var(--muted-foreground))]">
-            Track your study time. Duration is in minutes.
-          </p>
-        </div>
-        <Link to="/workspaces" className="text-sm text-[hsl(var(--muted-foreground))] hover:underline">
-          ← Back to workspaces
-        </Link>
-      </div>
+      <PageHeader
+        title="Study Sessions"
+        description="Track your study time. Duration is in minutes."
+        backLink="/workspaces"
+        backLabel="Back to workspaces"
+      />
 
-      <div className="grid gap-4 md:grid-cols-4">
+      {error && <ErrorBanner message={error} onRetry={loadData} />}
+
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardContent className="pt-6 pb-5">
             <div className="text-2xl font-bold">{totalHours.toFixed(1)}h</div>
@@ -125,19 +126,13 @@ export default function SessionsPage() {
         </Card>
       </div>
 
-      {error && (
-        <div className="text-sm text-[hsl(var(--destructive))] bg-[hsl(var(--destructive))]/10 px-3 py-2 rounded border border-[hsl(var(--destructive))]/20">
-          {error}
-        </div>
-      )}
-
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-base">Log a study session</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4 pt-0">
           <form onSubmit={handleCreate}>
-            <div className="grid gap-4 md:grid-cols-4">
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               <div className="space-y-2">
                 <Label htmlFor="sessWorkspace">Workspace</Label>
                 <select
@@ -184,7 +179,7 @@ export default function SessionsPage() {
                 />
               </div>
             </div>
-            <Button type="submit" disabled={creating || !form.duration} className="mt-2">
+            <Button type="submit" disabled={creating || !form.duration} className="mt-2 w-full sm:w-auto">
               {creating ? "Logging…" : "Log session"}
             </Button>
           </form>
@@ -195,8 +190,8 @@ export default function SessionsPage() {
         {sessions.length ? (
           sessions.map((s) => (
             <Card key={s.id}>
-              <CardHeader className="pb-3 flex flex-row items-center justify-between">
-                <div>
+              <CardHeader className="pb-3 flex flex-row items-center justify-between sm:flex-col sm:items-start sm:gap-2">
+                <div className="flex-1 min-w-0">
                   <CardTitle className="text-base">
                     {s.workspace ? s.workspace.name : "Personal session"}
                   </CardTitle>
@@ -214,7 +209,12 @@ export default function SessionsPage() {
                     {Math.round((s.duration / 60) * 10) / 10} hours
                   </span>
                   <div className="flex gap-1">
-                    <Button variant="outline" size="sm" onClick={() => handleDelete(s.id)}>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleDelete(s.id)}
+                      aria-label="Delete session"
+                    >
                       <Trash2 className="h-3 w-3" />
                     </Button>
                   </div>
@@ -224,11 +224,11 @@ export default function SessionsPage() {
           ))
         ) : (
           <Card>
-            <CardContent className="text-center py-12">
-              <Clock className="h-10 w-10 mx-auto text-[hsl(var(--muted-foreground))] mb-3" />
-              <p className="text-sm text-[hsl(var(--muted-foreground))]">No study sessions yet.</p>
-              <p className="text-xs text-[hsl(var(--muted-foreground))] mt-1">Log your first session above.</p>
-            </CardContent>
+            <EmptyState
+              icon={Clock}
+              title="No study sessions yet"
+              description="Log your first session above."
+            />
           </Card>
         )}
       </div>

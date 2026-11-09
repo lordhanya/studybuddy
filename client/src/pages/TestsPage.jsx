@@ -1,14 +1,18 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { api } from "@/services/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { BarChart3, Trash2 } from "lucide-react";
+import PageHeader from "@/components/PageHeader";
+import EmptyState from "@/components/EmptyState";
+import ErrorBanner from "@/components/ErrorBanner";
+import { BarChart3, Trash2, Users } from "lucide-react";
 
 export default function TestsPage() {
+  const navigate = useNavigate();
   const [tests, setTests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -39,7 +43,7 @@ export default function TestsPage() {
       setTests(Array.isArray(t) ? t : []);
       setWorkspaces(Array.isArray(ws) ? ws : []);
     } catch (e) {
-      console.error(e);
+      setError(e.message || "Failed to load tests");
     } finally {
       setLoading(false);
     }
@@ -102,7 +106,7 @@ export default function TestsPage() {
 
   if (loading) {
     return (
-      <div className="flex h-full items-center justify-center text-[hsl(var(--muted-foreground))]">
+      <div className="flex min-h-[60vh] items-center justify-center text-[hsl(var(--muted-foreground))]">
         Loading tests…
       </div>
     );
@@ -110,19 +114,16 @@ export default function TestsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-4">
-        <div>
-          <h2 className="text-lg font-semibold tracking-tight">Mock Tests</h2>
-          <p className="text-sm text-[hsl(var(--muted-foreground))]">
-            Record your mock test results and track performance over time.
-          </p>
-        </div>
-        <Link to="/workspaces" className="text-sm text-[hsl(var(--muted-foreground))] hover:underline">
-          ← Back to workspaces
-        </Link>
-      </div>
+      <PageHeader
+        title="Mock Tests"
+        description="Record your mock test results and track performance over time."
+        backLink="/workspaces"
+        backLabel="Back to workspaces"
+      />
 
-      <div className="grid gap-4 md:grid-cols-4">
+      {error && <ErrorBanner message={error} onRetry={loadData} />}
+
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardContent className="pt-6 pb-5">
             <div className="text-2xl font-bold">{tests.length}</div>
@@ -153,19 +154,13 @@ export default function TestsPage() {
         </Card>
       </div>
 
-      {error && (
-        <div className="text-sm text-[hsl(var(--destructive))] bg-[hsl(var(--destructive))]/10 px-3 py-2 rounded border border-[hsl(var(--destructive))]/20">
-          {error}
-        </div>
-      )}
-
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-base">Record mock test result</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4 pt-0">
           <form onSubmit={handleCreate}>
-            <div className="grid gap-4 md:grid-cols-4">
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               <div className="space-y-2">
                 <Label htmlFor="testWorkspace">Workspace</Label>
                 <select
@@ -182,7 +177,7 @@ export default function TestsPage() {
                   ))}
                 </select>
               </div>
-              <div className="space-y-2">
+              <div className="space-y-2 sm:col-span-2 lg:col-span-2">
                 <Label htmlFor="testTitle">Test title</Label>
                 <Input
                   id="testTitle"
@@ -251,7 +246,11 @@ export default function TestsPage() {
             <p className="text-xs text-[hsl(var(--muted-foreground))] mt-2">
               Attempted questions is auto-calculated from correct + incorrect if not provided.
             </p>
-            <Button type="submit" disabled={creating || !form.title || !form.subject} className="mt-2">
+            <Button
+              type="submit"
+              disabled={creating || !form.title || !form.subject}
+              className="mt-2 w-full sm:w-auto"
+            >
               {creating ? "Recording…" : "Record test"}
             </Button>
           </form>
@@ -264,12 +263,12 @@ export default function TestsPage() {
             const pct = t.totalMarks > 0 ? Math.round((t.obtainedMarks / t.totalMarks) * 100) : 0;
             return (
               <Card key={t.id}>
-                <CardHeader className="pb-3 flex flex-row items-center justify-between">
-                  <div>
+                <CardHeader className="pb-3 flex flex-row items-center justify-between sm:flex-col sm:items-start sm:gap-2">
+                  <div className="flex-1 min-w-0">
                     <CardTitle className="text-base">{t.title}</CardTitle>
                     <div className="flex items-center gap-1.5 text-xs text-[hsl(var(--muted-foreground))] mt-1">
                       <BarChart3 className="h-3 w-3 shrink-0" />
-                      <span>{t.subject}</span>
+                      <span className="truncate">{t.subject}</span>
                       {t.workspace && <span>· {t.workspace.name}</span>}
                     </div>
                     <div className="text-xs text-[hsl(var(--muted-foreground))]">
@@ -284,7 +283,7 @@ export default function TestsPage() {
                   </Badge>
                 </CardHeader>
                 <CardContent className="pt-0">
-                  <div className="grid gap-2 md:grid-cols-4 text-sm pt-3">
+                  <div className="grid gap-2 sm:grid-cols-4 text-sm pt-3">
                     <div>
                       <div className="text-xs text-[hsl(var(--muted-foreground))]">Obtained</div>
                       <div className="font-medium">{t.obtainedMarks}</div>
@@ -303,7 +302,12 @@ export default function TestsPage() {
                     </div>
                   </div>
                   <div className="flex justify-end mt-4">
-                    <Button variant="outline" size="sm" onClick={() => handleDelete(t.id)}>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleDelete(t.id)}
+                      aria-label="Delete test"
+                    >
                       <Trash2 className="h-3 w-3" />
                     </Button>
                   </div>
@@ -313,11 +317,11 @@ export default function TestsPage() {
           })
         ) : (
           <Card>
-            <CardContent className="text-center py-12">
-              <BarChart3 className="h-10 w-10 mx-auto text-[hsl(var(--muted-foreground))] mb-3" />
-              <p className="text-sm text-[hsl(var(--muted-foreground))]">No mock tests yet.</p>
-              <p className="text-xs text-[hsl(var(--muted-foreground))] mt-1">Record your first test result above.</p>
-            </CardContent>
+            <EmptyState
+              icon={BarChart3}
+              title="No mock tests yet"
+              description="Record your first test result above."
+            />
           </Card>
         )}
       </div>

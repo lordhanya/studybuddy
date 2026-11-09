@@ -1,10 +1,14 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { api } from "@/services/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import PageHeader from "@/components/PageHeader";
+import EmptyState from "@/components/EmptyState";
+import ErrorBanner from "@/components/ErrorBanner";
 import { Clock, BarChart3, BookOpen } from "lucide-react";
 
 export default function AnalyticsPage() {
+  const navigate = useNavigate();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -32,7 +36,7 @@ export default function AnalyticsPage() {
 
   if (loading) {
     return (
-      <div className="flex h-full items-center justify-center text-[hsl(var(--muted-foreground))]">
+      <div className="flex min-h-[60vh] items-center justify-center text-[hsl(var(--muted-foreground))]">
         Loading analytics…
       </div>
     );
@@ -40,37 +44,31 @@ export default function AnalyticsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-4">
-        <div>
-          <h2 className="text-lg font-semibold tracking-tight">Analytics</h2>
-          <p className="text-sm text-[hsl(var(--muted-foreground))]">
-            Your personal progress overview.
-          </p>
-        </div>
-        <Link to="/workspaces" className="text-sm text-[hsl(var(--muted-foreground))] hover:underline">
-          ← Back to workspaces
-        </Link>
-      </div>
+      <PageHeader
+        title="Analytics"
+        description="Your personal progress overview."
+        backLink="/workspaces"
+        backLabel="Back to workspaces"
+      />
 
-      {error && (
-        <div className="text-sm text-[hsl(var(--destructive))] bg-[hsl(var(--destructive))]/10 px-3 py-2 rounded border border-[hsl(var(--destructive))]/20">
-          {error}
-        </div>
-      )}
+      {error && <ErrorBanner message={error} />}
 
       {!data ? (
         <Card>
           <CardContent className="text-center py-12">
-            <BarChart3 className="h-10 w-10 mx-auto text-[hsl(var(--muted-foreground))] mb-3" />
-            <p className="text-sm text-[hsl(var(--muted-foreground))]">No workspaces found.</p>
-            <p className="text-xs text-[hsl(var(--muted-foreground))] mt-1">
-              Create or join a group and workspace to see analytics.
-            </p>
+            <EmptyState
+              icon={BarChart3}
+              title="No workspaces found"
+              description="Create or join a group and workspace to see analytics."
+              actions={
+                <Button onClick={() => navigate("/workspaces")}>Create a workspace</Button>
+              }
+            />
           </CardContent>
         </Card>
       ) : (
         <>
-          <div className="grid gap-4 md:grid-cols-4">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <Card>
               <CardHeader>
                 <CardTitle className="text-sm">Total study hours</CardTitle>
@@ -114,7 +112,7 @@ export default function AnalyticsPage() {
             </Card>
           </div>
 
-          <div className="grid gap-6 lg:grid-cols-2">
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-2">
             {/* Daily hours chart */}
             <Card>
               <CardHeader className="flex items-center justify-between pb-3">
@@ -124,24 +122,35 @@ export default function AnalyticsPage() {
                 <Clock className="h-4 w-4 text-[hsl(var(--muted-foreground))]" />
               </CardHeader>
               <CardContent>
-                <div className="h-64 flex items-end gap-1">
-                  {data.dailyHours.map((d, index) => (
-                    <div
-                      key={d.date}
-                      className="flex-1 min-w-0 h-full flex flex-col items-center justify-end gap-1"
-                      title={`${d.date}: ${d.hours}h`}
-                    >
+                <div className="overflow-x-auto">
+                  <div
+                    className="h-64 min-w-[600px] flex items-end gap-1 px-2 sm:px-0"
+                  >
+                    {data.dailyHours.map((d, index) => (
                       <div
-                        className="w-full bg-[hsl(var(--primary))] rounded-t"
-                        style={{
-                          height: `${Math.max((d.hours / (Math.max(1, ...data.dailyHours.map((dd) => dd.hours)))) * 90, d.hours > 0 ? 3 : 1)}%`,
-                        }}
-                      />
-                      <span className="text-[9px] text-[hsl(var(--muted-foreground))] whitespace-nowrap">
-                        {index % 5 === 0 || index === data.dailyHours.length - 1 ? d.date.slice(5) : ""}
-                      </span>
-                    </div>
-                  ))}
+                        key={d.date}
+                        className="flex-1 min-w-0 h-full flex flex-col items-center justify-end gap-1"
+                        title={`${d.date}: ${d.hours}h`}
+                      >
+                        <div
+                          className="w-full bg-[hsl(var(--primary))] rounded-t"
+                          style={{
+                            height: `${Math.max(
+                              (d.hours /
+                                (Math.max(1, ...data.dailyHours.map((dd) => dd.hours)))) *
+                                90,
+                              d.hours > 0 ? 3 : 1
+                            )}%`,
+                          }}
+                        />
+                        <span className="text-[9px] text-[hsl(var(--muted-foreground))] whitespace-nowrap">
+                          {index % 5 === 0 || index === data.dailyHours.length - 1
+                            ? d.date.slice(5)
+                            : ""}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -155,22 +164,30 @@ export default function AnalyticsPage() {
                 <BookOpen className="h-4 w-4 text-[hsl(var(--muted-foreground))]" />
               </CardHeader>
               <CardContent className="space-y-3">
-                {data.subjectProgress.map((s) => (
-                  <div key={s.subjectId} className="flex items-center justify-between">
-                    <div className="flex-1">
-                      <div className="text-sm font-medium">{s.subjectName}</div>
-                      <div className="text-xs text-[hsl(var(--muted-foreground))]">
-                        {s.completedTopics}/{s.totalTopics} topics
+                {data.subjectProgress.length ? (
+                  data.subjectProgress.map((s) => (
+                    <div key={s.subjectId} className="flex items-center justify-between">
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm font-medium truncate">{s.subjectName}</div>
+                        <div className="text-xs text-[hsl(var(--muted-foreground))]">
+                          {s.completedTopics}/{s.totalTopics} topics
+                        </div>
+                      </div>
+                      <div className="w-24 shrink-0 flex items-end gap-1">
+                        <div className="h-8 w-full bg-[hsl(var(--secondary))] rounded-full overflow-hidden">
+                          <div className="h-full bg-[hsl(var(--primary))]" style={{ width: `${s.completionPercentage}%` }} />
+                        </div>
+                        <span className="ml-1 text-xs font-medium whitespace-nowrap">
+                          {s.completionPercentage}%
+                        </span>
                       </div>
                     </div>
-                    <div className="w-24 flex items-end gap-1">
-                      <div className="h-8 w-full bg-[hsl(var(--secondary))] rounded-full overflow-hidden">
-                        <div className="h-full bg-[hsl(var(--primary))]" style={{ width: `${s.completionPercentage}%` }} />
-                      </div>
-                      <span className="ml-1 text-xs font-medium">{s.completionPercentage}%</span>
-                    </div>
-                  </div>
-                ))}
+                  ))
+                ) : (
+                  <p className="text-xs text-[hsl(var(--muted-foreground))] text-center py-4">
+                    No subject progress yet.
+                  </p>
+                )}
               </CardContent>
             </Card>
           </div>
@@ -187,17 +204,19 @@ export default function AnalyticsPage() {
               {data.mockTrend.length ? (
                 data.mockTrend.map((t) => (
                   <div key={t.title} className="flex items-center justify-between">
-                    <div className="flex-1">
-                      <div className="text-sm font-medium">{t.title}</div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-medium truncate">{t.title}</div>
                       <div className="text-xs text-[hsl(var(--muted-foreground))]">
                         {new Date(t.date).toLocaleDateString()}
                       </div>
                     </div>
-                    <div className="w-32 flex items-end gap-1">
+                    <div className="w-32 shrink-0 flex items-end gap-1">
                       <div className="h-16 w-full bg-[hsl(var(--secondary))] rounded-full overflow-hidden">
                         <div className="h-full bg-emerald-500" style={{ width: `${t.percentage}%` }} />
                       </div>
-                      <span className="ml-1 text-xs font-medium">{t.percentage}%</span>
+                      <span className="ml-1 text-xs font-medium whitespace-nowrap">
+                        {t.percentage}%
+                      </span>
                     </div>
                   </div>
                 ))

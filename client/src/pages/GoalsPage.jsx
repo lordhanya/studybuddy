@@ -89,19 +89,23 @@ export default function GoalsPage() {
     }
   };
 
-  if (loading) return <div className="text-[hsl(var(--muted-foreground))]">Loading goals…</div>;
+  if (loading) {
+    return (
+      <div className="flex h-full items-center justify-center text-[hsl(var(--muted-foreground))]">
+        Loading goals…
+      </div>
+    );
+  }
 
   const activeGoals = goals.filter((g) => g.status === "ACTIVE");
   const completedGoals = goals.filter((g) => g.status === "COMPLETED");
-  const completionRate = goals.length
-    ? Math.round((completedGoals.length / goals.length) * 100)
-    : 0;
+  const completionRate = goals.length ? Math.round((completedGoals.length / goals.length) * 100) : 0;
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-4">
         <div>
-          <h1 className="text-lg font-semibold">Study Goals</h1>
+          <h2 className="text-lg font-semibold tracking-tight">Study Goals</h2>
           <p className="text-sm text-[hsl(var(--muted-foreground))]">
             Set personal and shared study targets. Track your progress over time.
           </p>
@@ -111,24 +115,23 @@ export default function GoalsPage() {
         </Link>
       </div>
 
-      {/* Goal stats */}
       <div className="grid gap-4 md:grid-cols-3">
         <Card>
-          <CardContent className="pt-6 pb-4">
+          <CardContent className="pt-6 pb-5">
             <div className="text-2xl font-bold">{goals.length}</div>
-            <div className="text-xs text-[hsl(var(--muted-foreground))]">Total goals</div>
+            <div className="text-xs text-[hsl(var(--muted-foreground))] mt-1">Total goals</div>
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="pt-6 pb-4">
+          <CardContent className="pt-6 pb-5">
             <div className="text-2xl font-bold">{completionRate}%</div>
-            <div className="text-xs text-[hsl(var(--muted-foreground))]">Goals completed</div>
+            <div className="text-xs text-[hsl(var(--muted-foreground))] mt-1">Goals completed</div>
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="pt-6 pb-4">
+          <CardContent className="pt-6 pb-5">
             <div className="text-2xl font-bold">{activeGoals.length}</div>
-            <div className="text-xs text-[hsl(var(--muted-foreground))]">Active goals</div>
+            <div className="text-xs text-[hsl(var(--muted-foreground))] mt-1">Active goals</div>
           </CardContent>
         </Card>
       </div>
@@ -139,10 +142,9 @@ export default function GoalsPage() {
         </div>
       )}
 
-      {/* Create goal */}
       <Card>
-        <CardHeader>
-          <CardTitle>Create a new goal</CardTitle>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">Create a new goal</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4 pt-0">
           <form onSubmit={handleCreate}>
@@ -170,7 +172,7 @@ export default function GoalsPage() {
                 <Label htmlFor="goalWorkspace">Workspace</Label>
                 <select
                   id="goalWorkspace"
-                  className="w-full rounded-md border border-[hsl(var(--input))] bg-[hsl(var(--background))] px-3 py-2 text-sm"
+                  className="w-full rounded-md border border-[hsl(var(--input))] bg-[hsl(var(--background))] px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))]"
                   value={form.workspaceId}
                   onChange={(e) => setForm({ ...form, workspaceId: e.target.value })}
                 >
@@ -197,12 +199,10 @@ export default function GoalsPage() {
                   id="goalStatus"
                   value={form.status}
                   onChange={(e) => setForm({ ...form, status: e.target.value })}
-                  className="w-full rounded-md border border-[hsl(var(--input))] bg-[hsl(var(--background))] px-3 py-2 text-sm"
+                  className="w-full rounded-md border border-[hsl(var(--input))] bg-[hsl(var(--background))] px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))]"
                 >
                   {Object.entries(STATUS_CONFIG).map(([key, cfg]) => (
-                    <option key={key} value={key}>
-                      {cfg.label}
-                    </option>
+                    <option key={key} value={key}>{cfg.label}</option>
                   ))}
                 </select>
               </div>
@@ -214,7 +214,6 @@ export default function GoalsPage() {
         </CardContent>
       </Card>
 
-      {/* Goals list */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {goals.length ? (
           goals.map((goal) => {
@@ -222,15 +221,15 @@ export default function GoalsPage() {
             return (
               <Card key={goal.id}>
                 <CardHeader className="pb-3 flex flex-row items-center justify-between">
-                  <div>
+                  <div className="flex-1 min-w-0">
                     <CardTitle className="text-base">{goal.title}</CardTitle>
                     {goal.description && (
-                      <p className="text-xs text-[hsl(var(--muted-foreground))] mt-1">
+                      <p className="text-xs text-[hsl(var(--muted-foreground))] mt-1 line-clamp-2">
                         {goal.description}
                       </p>
                     )}
                   </div>
-                  <Badge variant={cfg.variant} className="text-xs">
+                  <Badge variant={cfg.variant} className="text-xs shrink-0">
                     {cfg.label}
                   </Badge>
                 </CardHeader>
@@ -245,7 +244,7 @@ export default function GoalsPage() {
                       Target: {new Date(goal.targetDate).toLocaleDateString()}
                     </p>
                   )}
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 pt-3">
                     <Button
                       variant="outline"
                       size="sm"
@@ -258,11 +257,7 @@ export default function GoalsPage() {
                     >
                       {goal.status === "ACTIVE" ? "Mark complete" : "Reopen"}
                     </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleDelete(goal.id)}
-                    >
+                    <Button variant="outline" size="sm" onClick={() => handleDelete(goal.id)}>
                       <Trash2 className="h-3 w-3" />
                     </Button>
                   </div>
@@ -272,12 +267,10 @@ export default function GoalsPage() {
           })
         ) : (
           <Card>
-            <CardContent className="text-center py-10">
+            <CardContent className="text-center py-12">
               <Target className="h-10 w-10 mx-auto text-[hsl(var(--muted-foreground))] mb-3" />
               <p className="text-sm text-[hsl(var(--muted-foreground))]">No goals yet.</p>
-              <p className="text-xs text-[hsl(var(--muted-foreground))] mt-1">
-                Create your first study goal above.
-              </p>
+              <p className="text-xs text-[hsl(var(--muted-foreground))] mt-1">Create your first study goal above.</p>
             </CardContent>
           </Card>
         )}

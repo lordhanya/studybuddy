@@ -12,7 +12,7 @@ function badgeVariant(variant?: BadgeProps["variant"]) {
     case "destructive":
       return "border-transparent bg-[hsl(var(--destructive))] text-[hsl(var(--destructive-foreground))]";
     case "outline":
-      return "text-[hsl(var(--foreground))] border-[hsl(var(--input))]";
+      return "text-[hsl(var(--foreground))] border-[hsl(var(--border))]";
     default:
       return "border-transparent bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))]";
   }

@@ -66,7 +66,11 @@ export default function DashboardPage() {
   };
 
   if (loading) {
-    return <div className="text-[hsl(var(--muted-foreground))]">Loading…</div>;
+    return (
+      <div className="flex h-full items-center justify-center text-[hsl(var(--muted-foreground))]">
+        Loading…
+      </div>
+    );
   }
 
   const cards = [
@@ -80,7 +84,7 @@ export default function DashboardPage() {
     <div className="space-y-6">
       <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-4">
         <div>
-          <h2 className="text-lg font-semibold">Dashboard</h2>
+          <h2 className="text-lg font-semibold tracking-tight">Dashboard</h2>
           <p className="text-sm text-[hsl(var(--muted-foreground))]">
             Welcome back, {user?.fullName}. Here's your progress at a glance.
           </p>
@@ -102,11 +106,13 @@ export default function DashboardPage() {
           const Icon = card.icon;
           return (
             <Card key={card.label}>
-              <CardContent className="pt-6">
-                <div className="flex items-start justify-between">
+              <CardContent className="pt-6 pb-5">
+                <div className="flex items-start justify-between gap-3">
                   <div>
-                    <div className="text-xs text-[hsl(var(--muted-foreground))]">{card.label}</div>
-                    <div className="mt-2 text-2xl font-bold">{card.value}</div>
+                    <div className="text-xs font-medium text-[hsl(var(--muted-foreground))] uppercase tracking-wider">
+                      {card.label}
+                    </div>
+                    <div className="mt-1 text-2xl font-bold">{card.value}</div>
                   </div>
                   <div className="rounded-md p-2 bg-[hsl(var(--secondary))] text-[hsl(var(--primary))]">
                     <Icon className="h-5 w-5" />
@@ -118,26 +124,26 @@ export default function DashboardPage() {
         })}
       </div>
 
-      <div className="grid gap-6 md:grid-cols-12">
+      <div className="grid gap-6 lg:grid-cols-12">
         <div className="lg:col-span-8">
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle>Recent activity</CardTitle>
+            <CardHeader className="flex flex-row items-center justify-between pb-3">
+              <CardTitle className="text-base">Recent activity</CardTitle>
               <Button variant="outline" size="sm" onClick={() => navigate("/activity")}>
                 View all
               </Button>
             </CardHeader>
             <CardContent className="pt-0">
-              <div className="space-y-1">
+              <div className="space-y-0">
                 {stats.recentActivities.length ? (
                   stats.recentActivities.map((activity) => {
                     const Icon = ACTIVITY_ICONS[activity.type] || Activity;
                     return (
                       <div
                         key={activity.id}
-                        className="flex items-start gap-3 py-3 border-b border-[hsl(var(--input))] last:border-b-0"
+                        className="flex items-start gap-3 py-3 border-b border-[hsl(var(--border))] last:border-b-0"
                       >
-                        <div className="w-8 h-8 rounded bg-[hsl(var(--secondary))] flex items-center justify-center shrink-0">
+                        <div className="w-8 h-8 rounded-md bg-[hsl(var(--secondary))] flex items-center justify-center shrink-0">
                           <Icon className="h-4 w-4" />
                         </div>
                         <div className="flex-1 min-w-0">
@@ -156,8 +162,13 @@ export default function DashboardPage() {
                     );
                   })
                 ) : (
-                  <div className="text-center py-8 text-[hsl(var(--muted-foreground))]">
-                    No recent activity yet. Start by joining a group and tracking topics.
+                  <div className="text-center py-10">
+                    <p className="text-sm text-[hsl(var(--muted-foreground))]">
+                      No recent activity yet.
+                    </p>
+                    <p className="text-xs text-[hsl(var(--muted-foreground))] mt-1">
+                      Start by joining a group and tracking topics.
+                    </p>
                   </div>
                 )}
               </div>
@@ -167,26 +178,26 @@ export default function DashboardPage() {
 
         <div className="lg:col-span-4">
           <Card>
-            <CardHeader>
-              <CardTitle>Quick actions</CardTitle>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base">Quick actions</CardTitle>
             </CardHeader>
             <CardContent className="pt-0 space-y-3">
               <Button className="w-full justify-start gap-2" onClick={() => navigate("/groups")}>
-                <UsersIcon className="h-4 w-4" /> Join or create a group
+                <UsersIcon className="h-4 w-4 shrink-0" /> Join or create a group
               </Button>
               <Button
                 variant="outline"
                 className="w-full justify-start gap-2"
                 onClick={() => navigate("/workspaces")}
               >
-                <List className="h-4 w-4" /> Track a topic
+                <List className="h-4 w-4 shrink-0" /> Track a topic
               </Button>
               <Button
                 variant="outline"
                 className="w-full justify-start gap-2"
                 onClick={() => navigate("/sessions")}
               >
-                <Clock className="h-4 w-4" /> Log a study session
+                <Clock className="h-4 w-4 shrink-0" /> Log a study session
               </Button>
             </CardContent>
           </Card>

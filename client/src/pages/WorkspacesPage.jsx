@@ -55,18 +55,26 @@ export default function WorkspacesPage() {
     }
   };
 
-  if (loading) return <div className="text-[hsl(var(--muted-foreground))]">Loading…</div>;
+  if (loading) {
+    return (
+      <div className="flex h-full items-center justify-center text-[hsl(var(--muted-foreground))]">
+        Loading…
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-4">
         <div>
-          <h2 className="text-lg font-semibold">Workspaces</h2>
+          <h2 className="text-lg font-semibold tracking-tight">Workspaces</h2>
           <p className="text-sm text-[hsl(var(--muted-foreground))]">
-            A workspace holds one exam syllabus (e.g. GATE 2027 CS) within a study group.
+            A workspace holds one exam syllabus within a study group.
           </p>
         </div>
-        <Button onClick={() => setCreating(true)}><Plus /> New workspace</Button>
+        <Button onClick={() => setCreating(true)}>
+          <Plus className="h-4 w-4 shrink-0" /> New workspace
+        </Button>
       </div>
 
       {error && (
@@ -77,25 +85,23 @@ export default function WorkspacesPage() {
 
       {creating && (
         <Card>
-          <CardHeader>
-            <CardTitle>Create workspace</CardTitle>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base">Create workspace</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-4 pt-0">
             <form onSubmit={handleCreate}>
               <div className="space-y-2">
                 <Label htmlFor="wsGroup">Study group</Label>
                 <select
                   id="wsGroup"
                   required
-                  className="w-full rounded-md border border-[hsl(var(--input))] bg-[hsl(var(--background))] px-3 py-2 text-sm"
+                  className="w-full rounded-md border border-[hsl(var(--input))] bg-[hsl(var(--background))] px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))]"
                   value={form.groupId}
                   onChange={(e) => setForm({ ...form, groupId: e.target.value })}
                 >
                   <option value="">Select a group</option>
                   {groups.map((g) => (
-                    <option key={g.id} value={g.id}>
-                      {g.name}
-                    </option>
+                    <option key={g.id} value={g.id}>{g.name}</option>
                   ))}
                 </select>
               </div>
@@ -153,20 +159,26 @@ export default function WorkspacesPage() {
         {workspaces.length ? (
           workspaces.map((w) => (
             <Card key={w.id}>
-              <CardHeader className="flex flex-row items-center justify-between pb-3">
+              <CardHeader className="flex flex-row items-start justify-between gap-2 pb-3">
                 <div>
                   <CardTitle className="text-base">{w.name}</CardTitle>
-                  <div className="flex items-center gap-1 text-xs text-[hsl(var(--muted-foreground))]">
-                    <Users className="h-3 w-3" />
+                  <div className="flex items-center gap-1.5 text-xs text-[hsl(var(--muted-foreground))] mt-1">
+                    <Users className="h-3 w-3 shrink-0" />
                     <span>{w.group.name}</span>
                   </div>
                 </div>
-                <Badge variant="outline">{w.examType} {w.examYear}</Badge>
+                <Badge variant="outline" className="text-xs">{w.examType} {w.examYear}</Badge>
               </CardHeader>
               <CardContent>
-                {w.description && <p className="text-sm text-[hsl(var(--muted-foreground))] mb-3">{w.description}</p>}
+                {w.description && (
+                  <p className="text-sm text-[hsl(var(--muted-foreground))] mb-4">
+                    {w.description}
+                  </p>
+                )}
                 <div className="flex items-center justify-between text-sm">
-                  <span className="text-[hsl(var(--muted-foreground))]">{w._count.subjects} subjects</span>
+                  <span className="text-[hsl(var(--muted-foreground))]">
+                    {w._count.subjects} subject{w._count.subjects !== 1 ? "s" : ""}
+                  </span>
                   <Button
                     size="sm"
                     onClick={() => navigate(`/workspaces/${w.id}/syllabus`)}
@@ -179,7 +191,7 @@ export default function WorkspacesPage() {
           ))
         ) : (
           <Card>
-            <CardContent className="text-center py-10">
+            <CardContent className="text-center py-12">
               <BookOpen className="h-10 w-10 mx-auto text-[hsl(var(--muted-foreground))] mb-3" />
               <p className="text-sm text-[hsl(var(--muted-foreground))]">No workspaces yet.</p>
               <p className="text-xs text-[hsl(var(--muted-foreground))] mt-1">

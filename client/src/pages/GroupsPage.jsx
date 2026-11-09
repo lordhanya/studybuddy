@@ -59,20 +59,30 @@ export default function GroupsPage() {
     }
   };
 
-  if (loading) return <div className="text-[hsl(var(--muted-foreground))]">Loading groups…</div>;
+  if (loading) {
+    return (
+      <div className="flex h-full items-center justify-center text-[hsl(var(--muted-foreground))]">
+        Loading groups…
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-4">
         <div>
-          <h2 className="text-lg font-semibold">Study Groups</h2>
+          <h2 className="text-lg font-semibold tracking-tight">Study Groups</h2>
           <p className="text-sm text-[hsl(var(--muted-foreground))]">
             Create or join groups to study together and compare progress.
           </p>
         </div>
         <div className="flex gap-2">
-          <Button onClick={() => setCreateMode(true)}><Plus /> Create group</Button>
-          <Button variant="outline" onClick={() => setJoinMode(true)}>Join by invite code</Button>
+          <Button onClick={() => setCreateMode(true)}>
+            <Plus className="h-4 w-4 shrink-0" /> Create group
+          </Button>
+          <Button variant="outline" onClick={() => setJoinMode(true)}>
+            Join by invite code
+          </Button>
         </div>
       </div>
 
@@ -84,10 +94,10 @@ export default function GroupsPage() {
 
       {createMode && (
         <Card>
-          <CardHeader>
-            <CardTitle>Create a new group</CardTitle>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base">Create a new group</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-4 pt-0">
             <form onSubmit={createGroup}>
               <div className="space-y-2">
                 <Label htmlFor="groupName">Group name</Label>
@@ -119,10 +129,10 @@ export default function GroupsPage() {
 
       {joinMode && (
         <Card>
-          <CardHeader>
-            <CardTitle>Join a group</CardTitle>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base">Join a group</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-4 pt-0">
             <form onSubmit={joinGroup}>
               <div className="space-y-2">
                 <Label htmlFor="inviteCode">Invite code</Label>
@@ -159,9 +169,13 @@ export default function GroupsPage() {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  {g.description && <p className="text-sm text-[hsl(var(--muted-foreground))] mb-3">{g.description}</p>}
+                  {g.description && (
+                    <p className="text-sm text-[hsl(var(--muted-foreground))] mb-3">
+                      {g.description}
+                    </p>
+                  )}
                   <div className="flex items-center gap-2 text-xs text-[hsl(var(--muted-foreground))] mb-3">
-                    <Users className="h-4 w-4" />
+                    <Users className="h-4 w-4 shrink-0" />
                     <span>
                       {g.memberCount} member{g.memberCount === 1 ? "" : "s"}
                     </span>
@@ -170,7 +184,7 @@ export default function GroupsPage() {
                     )}
                   </div>
                   {g.inviteCode && (
-                    <div className="flex items-center gap-2 text-xs bg-[hsl(var(--secondary))] p-2 rounded">
+                    <div className="flex items-center gap-2 text-xs bg-[hsl(var(--secondary))] px-2 py-1.5 rounded-md">
                       <span className="font-mono">Invite: {g.inviteCode}</span>
                     </div>
                   )}
@@ -179,10 +193,12 @@ export default function GroupsPage() {
             ))
           ) : (
             <Card>
-              <CardContent className="text-center py-10">
+              <CardContent className="text-center py-12">
                 <Users className="h-10 w-10 mx-auto text-[hsl(var(--muted-foreground))] mb-3" />
                 <p className="text-sm text-[hsl(var(--muted-foreground))]">No groups yet.</p>
-                <p className="text-xs text-[hsl(var(--muted-foreground))] mt-1">Create one to get started.</p>
+                <p className="text-xs text-[hsl(var(--muted-foreground))] mt-1">
+                  Create one to get started.
+                </p>
               </CardContent>
             </Card>
           )}

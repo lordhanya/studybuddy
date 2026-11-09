@@ -84,7 +84,7 @@ export default function RegisterPage() {
           </Button>
         </form>
       </CardContent>
-      <CardFooter className="border-t">
+      <CardFooter className="border-t pt-5">
         <p className="text-sm text-center text-[hsl(var(--muted-foreground))]">
           Already have an account?{" "}
           <Link to="/login" className="text-[hsl(var(--primary))] hover:underline font-medium">

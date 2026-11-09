@@ -24,11 +24,11 @@ export default function SyllabusPage() {
   const [showAddSubject, setShowAddSubject] = useState(false);
   const [subjectName, setSubjectName] = useState("");
   const [subjectDescription, setSubjectDescription] = useState("");
-  const [saving, setSaving] = useState(false);
   const [addingChapterFor, setAddingChapterFor] = useState("");
   const [chapterName, setChapterName] = useState("");
   const [addingTopicFor, setAddingTopicFor] = useState("");
   const [topicName, setTopicName] = useState("");
+  const [saving, setSaving] = useState(false);
   const [savingItem, setSavingItem] = useState(false);
 
   const loadData = async () => {
@@ -149,7 +149,11 @@ export default function SyllabusPage() {
   };
 
   if (loading) {
-    return <div className="text-[hsl(var(--muted-foreground))]">Loading syllabus…</div>;
+    return (
+      <div className="flex h-full items-center justify-center text-[hsl(var(--muted-foreground))]">
+        Loading syllabus…
+      </div>
+    );
   }
 
   if (!workspace) {
@@ -166,7 +170,7 @@ export default function SyllabusPage() {
           >
             ← Back to workspaces
           </Link>
-          <h1 className="text-lg font-semibold">{workspace.name}</h1>
+          <h1 className="text-lg font-semibold tracking-tight">{workspace.name}</h1>
           <p className="text-sm text-[hsl(var(--muted-foreground))]">
             {workspace.examType} {workspace.examYear} · {workspace.group.name}
           </p>
@@ -187,8 +191,8 @@ export default function SyllabusPage() {
 
       {showAddSubject && (
         <Card>
-          <CardHeader>
-            <CardTitle>Add subject</CardTitle>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base">Add subject</CardTitle>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleAddSubject} className="space-y-4">
@@ -215,11 +219,7 @@ export default function SyllabusPage() {
                 <Button type="submit" disabled={saving || !subjectName.trim()}>
                   {saving ? "Adding…" : "Add subject"}
                 </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setShowAddSubject(false)}
-                >
+                <Button type="button" variant="outline" onClick={() => setShowAddSubject(false)}>
                   Cancel
                 </Button>
               </div>
@@ -260,9 +260,7 @@ export default function SyllabusPage() {
                     size="sm"
                     variant="outline"
                     onClick={() => {
-                      setAddingChapterFor(
-                        addingChapterFor === subject.id ? "" : subject.id
-                      );
+                      setAddingChapterFor(addingChapterFor === subject.id ? "" : subject.id);
                       setChapterName("");
                       setAddingTopicFor("");
                     }}
@@ -285,22 +283,13 @@ export default function SyllabusPage() {
                       onChange={(e) => setChapterName(e.target.value)}
                     />
                     <div className="flex gap-2">
-                      <Button
-                        type="submit"
-                        size="sm"
-                        disabled={savingItem || !chapterName.trim()}
-                      >
+                      <Button type="submit" size="sm" disabled={savingItem || !chapterName.trim()}>
                         {savingItem ? "Adding…" : "Add"}
                       </Button>
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="outline"
-                        onClick={() => {
-                          setAddingChapterFor("");
-                          setChapterName("");
-                        }}
-                      >
+                      <Button type="button" size="sm" variant="outline" onClick={() => {
+                        setAddingChapterFor("");
+                        setChapterName("");
+                      }}>
                         Cancel
                       </Button>
                     </div>
@@ -313,10 +302,7 @@ export default function SyllabusPage() {
                 )}
                 <div className="space-y-3">
                   {subject.chapters.map((chapter) => (
-                    <div
-                      key={chapter.id}
-                      className="border-l border-[hsl(var(--input))] pl-4"
-                    >
+                    <div key={chapter.id} className="border-l border-[hsl(var(--border))] pl-4">
                       <div className="flex items-center gap-2 mb-2">
                         <ChevronRight className="h-4 w-4 text-[hsl(var(--muted-foreground))]" />
                         <span className="text-sm font-medium">{chapter.name}</span>
@@ -327,9 +313,7 @@ export default function SyllabusPage() {
                           <button
                             type="button"
                             onClick={() => {
-                              setAddingTopicFor(
-                                addingTopicFor === chapter.id ? "" : chapter.id
-                              );
+                              setAddingTopicFor(addingTopicFor === chapter.id ? "" : chapter.id);
                               setTopicName("");
                               setAddingChapterFor("");
                             }}
@@ -352,7 +336,7 @@ export default function SyllabusPage() {
                               <button
                                 key={topic.id}
                                 type="button"
-                                className="w-full flex items-center justify-between text-left hover:bg-[hsl(var(--secondary))]/50 rounded px-3 py-2 transition-colors"
+                                className="w-full flex items-center justify-between text-left hover:bg-[hsl(var(--secondary))]/50 rounded-md px-3 py-2 transition-colors"
                                 onClick={() => cycleStatus(topic.id)}
                                 title="Click to cycle topic status"
                               >
@@ -388,22 +372,13 @@ export default function SyllabusPage() {
                             onChange={(e) => setTopicName(e.target.value)}
                           />
                           <div className="flex gap-2">
-                            <Button
-                              type="submit"
-                              size="sm"
-                              disabled={savingItem || !topicName.trim()}
-                            >
+                            <Button type="submit" size="sm" disabled={savingItem || !topicName.trim()}>
                               {savingItem ? "Adding…" : "Add"}
                             </Button>
-                            <Button
-                              type="button"
-                              size="sm"
-                              variant="outline"
-                              onClick={() => {
-                                setAddingTopicFor("");
-                                setTopicName("");
-                              }}
-                            >
+                            <Button type="button" size="sm" variant="outline" onClick={() => {
+                              setAddingTopicFor("");
+                              setTopicName("");
+                            }}>
                               Cancel
                             </Button>
                           </div>
@@ -424,12 +399,12 @@ export default function SyllabusPage() {
 function statusDotClass(status) {
   switch (status) {
     case "COMPLETED":
-      return "bg-emerald-500";
+      return "bg-[hsl(var(--primary))]";
     case "IN_PROGRESS":
-      return "bg-blue-500";
+      return "bg-[hsl(var(--primary))]/60";
     case "NEEDS_REVISION":
-      return "bg-rose-500";
+      return "bg-[hsl(var(--destructive))]";
     default:
-      return "bg-[hsl(var(--muted-foreground))]/40";
+      return "bg-[hsl(var(--border))]";
   }
 }

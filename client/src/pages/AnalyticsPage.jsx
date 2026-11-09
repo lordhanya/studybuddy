@@ -30,13 +30,19 @@ export default function AnalyticsPage() {
     }
   };
 
-  if (loading) return <div className="text-[hsl(var(--muted-foreground))]">Loading analytics…</div>;
+  if (loading) {
+    return (
+      <div className="flex h-full items-center justify-center text-[hsl(var(--muted-foreground))]">
+        Loading analytics…
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-4">
         <div>
-          <h1 className="text-lg font-semibold">Analytics</h1>
+          <h2 className="text-lg font-semibold tracking-tight">Analytics</h2>
           <p className="text-sm text-[hsl(var(--muted-foreground))]">
             Your personal progress overview.
           </p>
@@ -54,7 +60,7 @@ export default function AnalyticsPage() {
 
       {!data ? (
         <Card>
-          <CardContent className="text-center py-10">
+          <CardContent className="text-center py-12">
             <BarChart3 className="h-10 w-10 mx-auto text-[hsl(var(--muted-foreground))] mb-3" />
             <p className="text-sm text-[hsl(var(--muted-foreground))]">No workspaces found.</p>
             <p className="text-xs text-[hsl(var(--muted-foreground))] mt-1">
@@ -67,7 +73,7 @@ export default function AnalyticsPage() {
           <div className="grid gap-4 md:grid-cols-4">
             <Card>
               <CardHeader>
-                <CardTitle>Total study hours</CardTitle>
+                <CardTitle className="text-sm">Total study hours</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="text-3xl font-bold">{data.totalStudyHours}h</div>
@@ -75,7 +81,7 @@ export default function AnalyticsPage() {
             </Card>
             <Card>
               <CardHeader>
-                <CardTitle>Subjects tracked</CardTitle>
+                <CardTitle className="text-sm">Subjects tracked</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="text-3xl font-bold">{data.subjectProgress.length}</div>
@@ -83,7 +89,7 @@ export default function AnalyticsPage() {
             </Card>
             <Card>
               <CardHeader>
-                <CardTitle>Mock tests</CardTitle>
+                <CardTitle className="text-sm">Mock tests</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="text-3xl font-bold">{data.mockTrend.length}</div>
@@ -91,7 +97,7 @@ export default function AnalyticsPage() {
             </Card>
             <Card>
               <CardHeader>
-                <CardTitle>Avg subject completion</CardTitle>
+                <CardTitle className="text-sm">Avg subject completion</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="text-3xl font-bold">
@@ -108,55 +114,45 @@ export default function AnalyticsPage() {
             </Card>
           </div>
 
-          <div className="grid gap-6 md:grid-cols-2">
+          <div className="grid gap-6 lg:grid-cols-2">
             {/* Daily hours chart */}
             <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle>Study hours (last 30 days)</CardTitle>
-                  <Clock className="h-4 w-4 text-[hsl(var(--muted-foreground))]" />
+              <CardHeader className="flex items-center justify-between pb-3">
+                <div>
+                  <CardTitle className="text-sm">Study hours (last 30 days)</CardTitle>
                 </div>
+                <Clock className="h-4 w-4 text-[hsl(var(--muted-foreground))]" />
               </CardHeader>
               <CardContent>
-                {(() => {
-                  const maxHours = Math.max(
-                    1,
-                    ...data.dailyHours.map((d) => d.hours)
-                  );
-                  return (
-                    <div className="h-64 flex items-end gap-1">
-                      {data.dailyHours.map((d, index) => (
-                        <div
-                          key={d.date}
-                          className="flex-1 min-w-0 h-full flex flex-col items-center justify-end gap-1"
-                          title={`${d.date}: ${d.hours}h`}
-                        >
-                          <div
-                            className="w-full bg-[hsl(var(--primary))] rounded-t"
-                            style={{
-                              height: `${Math.max((d.hours / maxHours) * 90, d.hours > 0 ? 3 : 1)}%`,
-                            }}
-                          />
-                          <span className="text-[9px] text-[hsl(var(--muted-foreground))] whitespace-nowrap">
-                            {index % 5 === 0 || index === data.dailyHours.length - 1
-                              ? d.date.slice(5)
-                              : ""}
-                          </span>
-                        </div>
-                      ))}
+                <div className="h-64 flex items-end gap-1">
+                  {data.dailyHours.map((d, index) => (
+                    <div
+                      key={d.date}
+                      className="flex-1 min-w-0 h-full flex flex-col items-center justify-end gap-1"
+                      title={`${d.date}: ${d.hours}h`}
+                    >
+                      <div
+                        className="w-full bg-[hsl(var(--primary))] rounded-t"
+                        style={{
+                          height: `${Math.max((d.hours / (Math.max(1, ...data.dailyHours.map((dd) => dd.hours)))) * 90, d.hours > 0 ? 3 : 1)}%`,
+                        }}
+                      />
+                      <span className="text-[9px] text-[hsl(var(--muted-foreground))] whitespace-nowrap">
+                        {index % 5 === 0 || index === data.dailyHours.length - 1 ? d.date.slice(5) : ""}
+                      </span>
                     </div>
-                  );
-                })()}
+                  ))}
+                </div>
               </CardContent>
             </Card>
 
             {/* Subject progress */}
             <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle>Subject completion</CardTitle>
-                  <BookOpen className="h-4 w-4 text-[hsl(var(--muted-foreground))]" />
+              <CardHeader className="flex items-center justify-between pb-3">
+                <div>
+                  <CardTitle className="text-sm">Subject completion</CardTitle>
                 </div>
+                <BookOpen className="h-4 w-4 text-[hsl(var(--muted-foreground))]" />
               </CardHeader>
               <CardContent className="space-y-3">
                 {data.subjectProgress.map((s) => (
@@ -168,17 +164,10 @@ export default function AnalyticsPage() {
                       </div>
                     </div>
                     <div className="w-24 flex items-end gap-1">
-                      <div
-                        className="h-8 w-full bg-[hsl(var(--secondary))] rounded-full overflow-hidden"
-                      >
-                        <div
-                          className="h-full bg-[hsl(var(--primary))]"
-                          style={{ width: `${s.completionPercentage}%` }}
-                        />
+                      <div className="h-8 w-full bg-[hsl(var(--secondary))] rounded-full overflow-hidden">
+                        <div className="h-full bg-[hsl(var(--primary))]" style={{ width: `${s.completionPercentage}%` }} />
                       </div>
-                      <span className="ml-1 text-xs font-medium">
-                        {s.completionPercentage}%
-                      </span>
+                      <span className="ml-1 text-xs font-medium">{s.completionPercentage}%</span>
                     </div>
                   </div>
                 ))}
@@ -188,11 +177,11 @@ export default function AnalyticsPage() {
 
           {/* Mock test trend */}
           <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle>Mock test performance</CardTitle>
-                <BarChart3 className="h-4 w-4 text-[hsl(var(--muted-foreground))]" />
+            <CardHeader className="flex items-center justify-between pb-3">
+              <div>
+                <CardTitle className="text-sm">Mock test performance</CardTitle>
               </div>
+              <BarChart3 className="h-4 w-4 text-[hsl(var(--muted-foreground))]" />
             </CardHeader>
             <CardContent className="space-y-2">
               {data.mockTrend.length ? (
@@ -205,17 +194,10 @@ export default function AnalyticsPage() {
                       </div>
                     </div>
                     <div className="w-32 flex items-end gap-1">
-                      <div
-                        className="h-16 w-full bg-[hsl(var(--secondary))] rounded-full overflow-hidden"
-                      >
-                        <div
-                          className="h-full bg-emerald-500"
-                          style={{ width: `${t.percentage}%` }}
-                        />
+                      <div className="h-16 w-full bg-[hsl(var(--secondary))] rounded-full overflow-hidden">
+                        <div className="h-full bg-emerald-500" style={{ width: `${t.percentage}%` }} />
                       </div>
-                      <span className="ml-1 text-xs font-medium">
-                        {t.percentage}%
-                      </span>
+                      <span className="ml-1 text-xs font-medium">{t.percentage}%</span>
                     </div>
                   </div>
                 ))

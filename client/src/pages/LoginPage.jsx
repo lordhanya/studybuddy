@@ -70,7 +70,7 @@ export default function LoginPage() {
           </Button>
         </form>
       </CardContent>
-      <CardFooter className="border-t">
+      <CardFooter className="border-t pt-5">
         <p className="text-sm text-center text-[hsl(var(--muted-foreground))]">
           Don't have an account?{" "}
           <Link to="/register" className="text-[hsl(var(--primary))] hover:underline font-medium">

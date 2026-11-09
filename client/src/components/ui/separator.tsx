@@ -7,7 +7,7 @@ const Separator = React.forwardRef<HTMLHRElement, SeparatorProps>(
   ({ className, ...props }, ref) => (
     <hr
       ref={ref}
-      className={cn("my-4 h-px bg-[hsl(var(--border))]", className)}
+      className={cn("my-5 h-px bg-[hsl(var(--border))]", className)}
       {...props}
     />
   )

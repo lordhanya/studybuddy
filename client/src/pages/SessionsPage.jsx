@@ -74,13 +74,19 @@ export default function SessionsPage() {
     }
   };
 
-  if (loading) return <div className="text-[hsl(var(--muted-foreground))]">Loading sessions…</div>;
+  if (loading) {
+    return (
+      <div className="flex h-full items-center justify-center text-[hsl(var(--muted-foreground))]">
+        Loading sessions…
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-4">
         <div>
-          <h1 className="text-lg font-semibold">Study Sessions</h1>
+          <h2 className="text-lg font-semibold tracking-tight">Study Sessions</h2>
           <p className="text-sm text-[hsl(var(--muted-foreground))]">
             Track your study time. Duration is in minutes.
           </p>
@@ -92,31 +98,29 @@ export default function SessionsPage() {
 
       <div className="grid gap-4 md:grid-cols-4">
         <Card>
-          <CardContent className="pt-6 pb-4">
+          <CardContent className="pt-6 pb-5">
             <div className="text-2xl font-bold">{totalHours.toFixed(1)}h</div>
-            <div className="text-xs text-[hsl(var(--muted-foreground))]">Total study hours</div>
+            <div className="text-xs text-[hsl(var(--muted-foreground))] mt-1">Total study hours</div>
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="pt-6 pb-4">
+          <CardContent className="pt-6 pb-5">
             <div className="text-2xl font-bold">{sessions.length}</div>
-            <div className="text-xs text-[hsl(var(--muted-foreground))]">Total sessions</div>
+            <div className="text-xs text-[hsl(var(--muted-foreground))] mt-1">Total sessions</div>
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="pt-6 pb-4">
+          <CardContent className="pt-6 pb-5">
             <div className="text-2xl font-bold">
-              {sessions.length ? Math.round(totalHours / sessions.length * 10) / 10 : 0}h
+              {sessions.length ? Math.round((totalHours / sessions.length) * 10) / 10 : 0}h
             </div>
-            <div className="text-xs text-[hsl(var(--muted-foreground))]">Avg per session</div>
+            <div className="text-xs text-[hsl(var(--muted-foreground))] mt-1">Avg per session</div>
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="pt-6 pb-4">
-            <div className="text-2xl font-bold">
-              {workspaces.length}
-            </div>
-            <div className="text-xs text-[hsl(var(--muted-foreground))]">Workspaces</div>
+          <CardContent className="pt-6 pb-5">
+            <div className="text-2xl font-bold">{workspaces.length}</div>
+            <div className="text-xs text-[hsl(var(--muted-foreground))] mt-1">Workspaces</div>
           </CardContent>
         </Card>
       </div>
@@ -127,10 +131,9 @@ export default function SessionsPage() {
         </div>
       )}
 
-      {/* Create session */}
       <Card>
-        <CardHeader>
-          <CardTitle>Log a study session</CardTitle>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">Log a study session</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4 pt-0">
           <form onSubmit={handleCreate}>
@@ -139,7 +142,7 @@ export default function SessionsPage() {
                 <Label htmlFor="sessWorkspace">Workspace</Label>
                 <select
                   id="sessWorkspace"
-                  className="w-full rounded-md border border-[hsl(var(--input))] bg-[hsl(var(--background))] px-3 py-2 text-sm"
+                  className="w-full rounded-md border border-[hsl(var(--input))] bg-[hsl(var(--background))] px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))]"
                   value={form.workspaceId}
                   onChange={(e) => setForm({ ...form, workspaceId: e.target.value })}
                 >
@@ -188,7 +191,6 @@ export default function SessionsPage() {
         </CardContent>
       </Card>
 
-      {/* Sessions list */}
       <div className="space-y-4">
         {sessions.length ? (
           sessions.map((s) => (
@@ -202,12 +204,12 @@ export default function SessionsPage() {
                     {new Date(s.startedAt).toLocaleString()}
                   </div>
                 </div>
-                <Badge variant="secondary" className="text-xs">
+                <Badge variant="secondary" className="text-xs shrink-0">
                   {s.duration} min
                 </Badge>
               </CardHeader>
               <CardContent className="pt-0">
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between pt-3">
                   <span className="text-sm text-[hsl(var(--muted-foreground))]">
                     {Math.round((s.duration / 60) * 10) / 10} hours
                   </span>
@@ -222,7 +224,7 @@ export default function SessionsPage() {
           ))
         ) : (
           <Card>
-            <CardContent className="text-center py-10">
+            <CardContent className="text-center py-12">
               <Clock className="h-10 w-10 mx-auto text-[hsl(var(--muted-foreground))] mb-3" />
               <p className="text-sm text-[hsl(var(--muted-foreground))]">No study sessions yet.</p>
               <p className="text-xs text-[hsl(var(--muted-foreground))] mt-1">Log your first session above.</p>

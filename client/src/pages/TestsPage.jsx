@@ -100,13 +100,19 @@ export default function TestsPage() {
     }
   };
 
-  if (loading) return <div className="text-[hsl(var(--muted-foreground))]">Loading tests…</div>;
+  if (loading) {
+    return (
+      <div className="flex h-full items-center justify-center text-[hsl(var(--muted-foreground))]">
+        Loading tests…
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-4">
         <div>
-          <h1 className="text-lg font-semibold">Mock Tests</h1>
+          <h2 className="text-lg font-semibold tracking-tight">Mock Tests</h2>
           <p className="text-sm text-[hsl(var(--muted-foreground))]">
             Record your mock test results and track performance over time.
           </p>
@@ -118,31 +124,31 @@ export default function TestsPage() {
 
       <div className="grid gap-4 md:grid-cols-4">
         <Card>
-          <CardContent className="pt-6 pb-4">
+          <CardContent className="pt-6 pb-5">
             <div className="text-2xl font-bold">{tests.length}</div>
-            <div className="text-xs text-[hsl(var(--muted-foreground))]">Tests taken</div>
+            <div className="text-xs text-[hsl(var(--muted-foreground))] mt-1">Tests taken</div>
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="pt-6 pb-4">
+          <CardContent className="pt-6 pb-5">
             <div className="text-2xl font-bold">{avgPct}%</div>
-            <div className="text-xs text-[hsl(var(--muted-foreground))]">Average score</div>
+            <div className="text-xs text-[hsl(var(--muted-foreground))] mt-1">Average score</div>
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="pt-6 pb-4">
+          <CardContent className="pt-6 pb-5">
             <div className="text-2xl font-bold">
               {tests.reduce((acc, t) => acc + t.obtainedMarks, 0)}
             </div>
-            <div className="text-xs text-[hsl(var(--muted-foreground))]">Total marks obtained</div>
+            <div className="text-xs text-[hsl(var(--muted-foreground))] mt-1">Total marks obtained</div>
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="pt-6 pb-4">
+          <CardContent className="pt-6 pb-5">
             <div className="text-2xl font-bold">
               {tests.reduce((acc, t) => acc + t.totalMarks, 0)}
             </div>
-            <div className="text-xs text-[hsl(var(--muted-foreground))]">Total possible marks</div>
+            <div className="text-xs text-[hsl(var(--muted-foreground))] mt-1">Total possible marks</div>
           </CardContent>
         </Card>
       </div>
@@ -153,10 +159,9 @@ export default function TestsPage() {
         </div>
       )}
 
-      {/* Create test */}
       <Card>
-        <CardHeader>
-          <CardTitle>Record mock test result</CardTitle>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">Record mock test result</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4 pt-0">
           <form onSubmit={handleCreate}>
@@ -165,7 +170,7 @@ export default function TestsPage() {
                 <Label htmlFor="testWorkspace">Workspace</Label>
                 <select
                   id="testWorkspace"
-                  className="w-full rounded-md border border-[hsl(var(--input))] bg-[hsl(var(--background))] px-3 py-2 text-sm"
+                  className="w-full rounded-md border border-[hsl(var(--input))] bg-[hsl(var(--background))] px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))]"
                   value={form.workspaceId}
                   onChange={(e) => setForm({ ...form, workspaceId: e.target.value })}
                 >
@@ -253,7 +258,6 @@ export default function TestsPage() {
         </CardContent>
       </Card>
 
-      {/* Tests list */}
       <div className="space-y-4">
         {tests.length ? (
           tests.map((t) => {
@@ -263,12 +267,10 @@ export default function TestsPage() {
                 <CardHeader className="pb-3 flex flex-row items-center justify-between">
                   <div>
                     <CardTitle className="text-base">{t.title}</CardTitle>
-                    <div className="flex items-center gap-1 text-xs text-[hsl(var(--muted-foreground))]">
-                      <BarChart3 className="h-3 w-3" />
+                    <div className="flex items-center gap-1.5 text-xs text-[hsl(var(--muted-foreground))] mt-1">
+                      <BarChart3 className="h-3 w-3 shrink-0" />
                       <span>{t.subject}</span>
-                      {t.workspace && (
-                        <span>· {t.workspace.name}</span>
-                      )}
+                      {t.workspace && <span>· {t.workspace.name}</span>}
                     </div>
                     <div className="text-xs text-[hsl(var(--muted-foreground))]">
                       {new Date(t.testDate).toLocaleDateString()}
@@ -276,13 +278,13 @@ export default function TestsPage() {
                   </div>
                   <Badge
                     variant={pct >= 60 ? "default" : pct >= 40 ? "secondary" : "destructive"}
-                    className="text-xs"
+                    className="text-xs shrink-0"
                   >
                     {pct}%
                   </Badge>
                 </CardHeader>
                 <CardContent className="pt-0">
-                  <div className="grid gap-2 md:grid-cols-4 text-sm">
+                  <div className="grid gap-2 md:grid-cols-4 text-sm pt-3">
                     <div>
                       <div className="text-xs text-[hsl(var(--muted-foreground))]">Obtained</div>
                       <div className="font-medium">{t.obtainedMarks}</div>
@@ -300,7 +302,7 @@ export default function TestsPage() {
                       <div className="font-medium">{t.incorrectAnswers}</div>
                     </div>
                   </div>
-                  <div className="flex justify-end mt-3">
+                  <div className="flex justify-end mt-4">
                     <Button variant="outline" size="sm" onClick={() => handleDelete(t.id)}>
                       <Trash2 className="h-3 w-3" />
                     </Button>
@@ -311,7 +313,7 @@ export default function TestsPage() {
           })
         ) : (
           <Card>
-            <CardContent className="text-center py-10">
+            <CardContent className="text-center py-12">
               <BarChart3 className="h-10 w-10 mx-auto text-[hsl(var(--muted-foreground))] mb-3" />
               <p className="text-sm text-[hsl(var(--muted-foreground))]">No mock tests yet.</p>
               <p className="text-xs text-[hsl(var(--muted-foreground))] mt-1">Record your first test result above.</p>

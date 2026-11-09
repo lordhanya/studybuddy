@@ -10,6 +10,24 @@
     <meta name="theme-color" content="#0b0b0c" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <title>StudyBuddy</title>
+    <script>
+      (function () {
+        var root = document.documentElement;
+        var saved = localStorage.getItem("sb-theme");
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        var shouldBeDark = saved === "dark" || (!saved && prefersDark);
+        if (shouldBeDark) {
+          root.classList.add("dark");
+        } else {
+          root.classList.remove("dark");
+        }
+        root.style.colorScheme = shouldBeDark ? "dark" : "light";
+        var meta = document.querySelector('meta[name="theme-color"]');
+        if (meta) {
+          meta.setAttribute("content", shouldBeDark ? "#0b0b0c" : "#ffffff");
+        }
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

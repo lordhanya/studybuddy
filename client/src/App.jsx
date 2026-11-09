@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import AppLayout from "@/layouts/AppLayout";
 import AuthLayout from "@/layouts/AuthLayout";
+import { ThemeProvider } from "@/contexts/ThemeContext";
 import DashboardPage from "@/pages/DashboardPage";
 import GroupsPage from "@/pages/GroupsPage";
 import LoginPage from "@/pages/LoginPage";
@@ -40,7 +41,8 @@ function PublicOnlyRoute({ children }) {
 export default function App() {
   return (
     <BrowserRouter>
-      <Routes>
+      <ThemeProvider>
+        <Routes>
         <Route
           path="/login"
           element={
@@ -83,6 +85,7 @@ export default function App() {
         </Route>
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
+      </ThemeProvider>
     </BrowserRouter>
   );
 }

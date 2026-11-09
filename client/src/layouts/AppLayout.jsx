@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { useTheme } from "@/contexts/ThemeContext";
 import { Button } from "@/components/ui/button";
 import {
   LayoutDashboard,
@@ -23,7 +24,7 @@ const NAV = [
   { href: "/workspaces", label: "Workspaces", icon: BookOpen },
   { href: "/activity", label: "Activity", icon: Activity },
   { href: "/goals", label: "Goals", icon: Target },
-  { href: "/sessions", label: "Sessions", icon: Clock },
+  { href: "/sessions", label: "Study Sessions", icon: Clock },
   { href: "/tests", label: "Mock Tests", icon: BarChart3 },
   { href: "/leaderboard", label: "Leaderboard", icon: Trophy },
   { href: "/analytics", label: "Analytics", icon: BarChart3 },
@@ -31,39 +32,48 @@ const NAV = [
 
 export default function AppLayout() {
   const { user, logout } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [dark, setDark] = useState(() =>
-    document.documentElement.classList.contains("dark")
-  );
   const location = useLocation();
-
-  useEffect(() => {
-    const saved = localStorage.getItem("sb-theme");
-    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-    const shouldBeDark = saved === "dark" || (!saved && prefersDark);
-    setDark(shouldBeDark);
-    document.documentElement.classList.toggle("dark", shouldBeDark);
-  }, []);
-
-  const toggleTheme = () => {
-    const next = !dark;
-    setDark(next);
-    localStorage.setItem("sb-theme", next ? "dark" : "light");
-    document.documentElement.classList.toggle("dark", next);
-  };
 
   const isActive = (href) =>
     location.pathname === href || location.pathname.startsWith(`${href}/`);
 
+  const themeIcon = theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />;
+  const themeLabel = theme === "dark" ? "Light mode" : "Dark mode";
+
+  const themeToggle = (labelVisible) => (
+    <button
+      type="button"
+      onClick={toggleTheme}
+      className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--secondary))] transition-colors"
+      aria-label="Toggle theme"
+    >
+      {themeIcon}
+      {labelVisible && <span>{themeLabel}</span>}
+    </button>
+  );
+
+  const signOutButton = (labelVisible) => (
+    <button
+      type="button"
+      onClick={logout}
+      className="mt-2 flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--secondary))] transition-colors"
+    >
+      <LogOut className="h-4 w-4" />
+      {labelVisible && "Sign out"}
+    </button>
+  );
+
   return (
-    <div className="flex h-screen flex-col lg:flex-row overflow-hidden">
+    <div className="flex h-[100dvh] flex-col lg:flex-row overflow-hidden">
       {/* Sidebar */}
       <aside
         className={`lg:flex-shrink-0 border-r border-[hsl(var(--border))] bg-[hsl(var(--card))] transition-all duration-300 ${
-          sidebarOpen ? "w-72" : "w-18"
+          sidebarOpen ? "w-64" : "w-20"
         }`}
       >
-        <div className="flex h-16 items-center justify-between px-4 border-b border-[hsl(var(--border))] bg-[hsl(var(--card))]">
+        <div className="flex h-14 items-center justify-between px-3 border-b border-[hsl(var(--border))] bg-[hsl(var(--card))]">
           <Link to="/dashboard" className="flex items-center gap-2.5">
             <BookOpen className="h-5 w-5 text-[hsl(var(--primary))]" />
             <span className={sidebarOpen ? "font-semibold text-sm tracking-tight" : "sr-only"}>
@@ -81,7 +91,7 @@ export default function AppLayout() {
             </button>
           )}
         </div>
-        <div className="flex-1 py-5 overflow-y-auto">
+        <div className="flex-1 py-4 overflow-y-auto">
           <nav className="space-y-0.5 px-2">
             {NAV.map((item) => {
               const Icon = item.icon;
@@ -91,6 +101,7 @@ export default function AppLayout() {
                   key={item.href}
                   to={item.href}
                   title={item.label}
+                  aria-current={active ? "page" : undefined}
                   className={`
                     flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors
                     ${
@@ -108,33 +119,15 @@ export default function AppLayout() {
           </nav>
         </div>
         <div className="p-3 border-t border-[hsl(var(--border))]">
-          <button
-            type="button"
-            onClick={toggleTheme}
-            className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--secondary))] transition-colors"
-          >
-            {dark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-            <span className={sidebarOpen ? "" : "sr-only"}>
-              {dark ? "Light mode" : "Dark mode"}
-            </span>
-          </button>
-          {sidebarOpen && (
-            <button
-              type="button"
-              onClick={logout}
-              className="mt-2 flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--secondary))] transition-colors"
-            >
-              <LogOut className="h-4 w-4" />
-              Sign out
-            </button>
-          )}
+          {themeToggle(sidebarOpen)}
+          {sidebarOpen && signOutButton(true)}
         </div>
       </aside>
 
       {/* Main content */}
       <div className="flex-1 flex flex-col min-w-0">
-        <header className="flex h-16 items-center justify-between border-b border-[hsl(var(--border))] bg-[hsl(var(--background))]/30 px-6">
-          <div className="flex items-center gap-4">
+        <header className="flex h-12 sm:h-16 items-center justify-between border-b border-[hsl(var(--border))] bg-[hsl(var(--background))]/40 px-3 sm:px-4 lg:px-6">
+          <div className="flex items-center gap-3">
             {!sidebarOpen && (
               <button
                 type="button"
@@ -145,20 +138,13 @@ export default function AppLayout() {
                 <Menu className="h-5 w-5" />
               </button>
             )}
-            <h1 className="text-sm font-semibold tracking-tight">
+            <h1 className="text-sm sm:text-base font-semibold tracking-tight min-w-0 truncate">
               {currentPageTitle(location.pathname)}
             </h1>
           </div>
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={toggleTheme}
-              className="rounded-md p-1.5 text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--secondary))]"
-              aria-label="Toggle theme"
-            >
-              {dark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
-            </button>
-            <div className="flex items-center gap-3 pl-3 border-l border-[hsl(var(--border))]">
+          <div className="flex items-center gap-2">
+            {themeToggle(false)}
+            <div className="flex items-center gap-3 pl-2 border-l border-[hsl(var(--border))]">
               <span className="hidden sm:block text-sm text-[hsl(var(--muted-foreground))]">
                 {user?.fullName}
               </span>
@@ -169,7 +155,7 @@ export default function AppLayout() {
             </div>
           </div>
         </header>
-        <main className="flex-1 overflow-y-auto p-5 lg:p-6">
+        <main className="flex-1 overflow-y-auto p-4 sm:p-5 lg:p-6">
           <Outlet />
         </main>
       </div>

@@ -3,6 +3,19 @@ import login from "./routes/auth/login.js";
 import logout from "./routes/auth/logout.js";
 import me from "./routes/auth/me.js";
 
+import { rateLimit } from "./lib/rateLimit.js";
+
+function withRateLimit(handler) {
+  return async (req, res) => {
+    const result = rateLimit(req);
+    if (!result.allowed) {
+      res.status(429).json({ message: "Too many requests. Try again later." });
+      return;
+    }
+    return handler(req, res);
+  };
+}
+
 import workspacesIndex from "./routes/workspaces/index.js";
 import workspaceItem from "./routes/workspaces/[id].js";
 
@@ -54,10 +67,10 @@ function pathToRegex(pattern) {
  * All paths are relative (without the /api prefix).
  */
 const ROUTES = [
-  // --- Auth ---
-  { method: "POST", path: "/auth/register", handler: register },
-  { method: "POST", path: "/auth/login", handler: login },
-  { method: "POST", path: "/auth/logout", handler: logout },
+  // --- Auth (rate-limited) ---
+  { method: "POST", path: "/auth/register", handler: withRateLimit(register) },
+  { method: "POST", path: "/auth/login", handler: withRateLimit(login) },
+  { method: "POST", path: "/auth/logout", handler: withRateLimit(logout) },
   { method: "GET", path: "/auth/me", handler: me },
 
   // --- Workspaces ---

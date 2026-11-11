@@ -15,14 +15,16 @@ export function generateToken() {
 
 export function setSessionCookie(res, token, expiresAt) {
   const maxAge = Math.floor((new Date(expiresAt) - Date.now()) / 1000);
+  // Site is HTTPS-only (HSTS preload). Always mark the session cookie Secure
+  // so it is never sent over plaintext, independent of NODE_ENV.
   res.setHeader(
     "Set-Cookie",
-    `session=${token}; Path=/; Max-Age=${maxAge}; HttpOnly${process.env.NODE_ENV === "production" ? "; Secure" : ""}; SameSite=Lax`
+    `session=${token}; Path=/; Max-Age=${maxAge}; HttpOnly; Secure; SameSite=Lax`
   );
 }
 
 export function clearSessionCookie(res) {
-  res.setHeader("Set-Cookie", "session=; Path=/; Max-Age=0; HttpOnly; SameSite=Lax");
+  res.setHeader("Set-Cookie", "session=; Path=/; Max-Age=0; HttpOnly; Secure; SameSite=Lax");
 }
 
 export function getSessionToken(req) {

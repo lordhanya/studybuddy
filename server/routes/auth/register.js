@@ -15,25 +15,22 @@ export default async function handler(req, res) {
     const normalizedEmail = String(email || "").trim().toLowerCase();
 
     if (!normalizedName || !normalizedEmail || !password) {
-      res.status(400).json({ message: "Full name, email and password are required" });
+      res.status(400).json({ message: "Invalid input" });
       return;
     }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
-      res.status(400).json({ message: "Invalid email address" });
+      res.status(400).json({ message: "Invalid input" });
       return;
     }
-    if (password.length < 8) {
-      res.status(400).json({ message: "Password must be at least 8 characters" });
-      return;
-    }
-    if (password.length > 72) {
-      res.status(400).json({ message: "Password must be 72 characters or fewer" });
+    if (password.length < 8 || password.length > 72) {
+      res.status(400).json({ message: "Invalid input" });
       return;
     }
 
     const existing = await prisma.user.findUnique({ where: { email: normalizedEmail } });
     if (existing) {
-      res.status(409).json({ message: "Email already registered" });
+      // Generic message to avoid leaking whether this email is registered.
+      res.status(409).json({ message: "Account creation failed" });
       return;
     }
 

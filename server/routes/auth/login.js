@@ -20,6 +20,12 @@ export default async function handler(req, res) {
 
     const user = await prisma.user.findUnique({ where: { email: normalizedEmail } });
     if (!user) {
+      // Always run bcrypt against a dummy hash so a missing user doesn't short-circuit.
+      try {
+        await comparePassword(password, "$2b$12$abcdefghijklmnopqrstuv");
+      } catch {
+        // Ignore; the hash is intentionally invalid. We just want constant work.
+      }
       res.status(401).json({ message: "Invalid email or password" });
       return;
     }

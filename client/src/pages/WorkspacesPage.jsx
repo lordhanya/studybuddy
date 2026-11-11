@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 import { api } from "@/services/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,14 +10,16 @@ import { Badge } from "@/components/ui/badge";
 import PageHeader from "@/components/PageHeader";
 import EmptyState from "@/components/EmptyState";
 import ErrorBanner from "@/components/ErrorBanner";
-import { Plus, BookOpen, Users } from "lucide-react";
+import { Plus, BookOpen, Users, Trash2 } from "lucide-react";
 
 export default function WorkspacesPage() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [workspaces, setWorkspaces] = useState([]);
   const [groups, setGroups] = useState([]);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
+  const [deleting, setDeleting] = useState("");
   const [form, setForm] = useState({
     groupId: "",
     name: "",
@@ -61,6 +64,19 @@ export default function WorkspacesPage() {
       loadData();
     } catch (err) {
       setError(err.message || "Failed to create workspace");
+    }
+  };
+
+  const handleDelete = async (id) => {
+    if (!window.confirm("Delete this workspace? This cannot be undone.")) return;
+    setDeleting(id);
+    try {
+      await api.workspaces.remove(id);
+      setWorkspaces((current) => current.filter((w) => w.id !== id));
+    } catch (err) {
+      setError(err.message || "Failed to delete workspace");
+    } finally {
+      setDeleting("");
     }
   };
 
@@ -172,8 +188,11 @@ export default function WorkspacesPage() {
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {workspaces.length ? (
           workspaces.map((w) => (
-            <Card key={w.id}>
-              <CardHeader className="pb-3 flex flex-row items-start justify-between gap-2">
+            <Card
+              key={w.id}
+              className="h-full flex flex-col"
+            >
+              <CardHeader className="pb-3 flex flex-row items-start justify-between gap-2 shrink-0">
                 <div className="flex-1 min-w-0">
                   <CardTitle className="text-base">{w.name}</CardTitle>
                   <div className="flex items-center gap-1.5 text-xs text-[hsl(var(--muted-foreground))] mt-1">
@@ -185,19 +204,32 @@ export default function WorkspacesPage() {
                   {w.examType} {w.examYear}
                 </Badge>
               </CardHeader>
-              <CardContent>
+              <CardContent className="flex-1 flex flex-col">
                 {w.description && (
-                  <p className="text-sm text-[hsl(var(--muted-foreground))] mb-4 line-clamp-2">
+                  <p className="text-sm text-[hsl(var(--muted-foreground))] mb-4 line-clamp-2 flex-1">
                     {w.description}
                   </p>
                 )}
-                <div className="flex items-center justify-between text-sm">
+                <div className="mt-auto flex items-center justify-between text-sm pt-3 border-t border-[hsl(var(--border))]">
                   <span className="text-[hsl(var(--muted-foreground))]">
                     {w._count?.subjects ?? 0} subject{(w._count?.subjects ?? 0) !== 1 ? "s" : ""}
                   </span>
-                  <Button size="sm" onClick={() => navigate(`/workspaces/${w.id}/syllabus`)}>
-                    Open syllabus
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    <Button size="sm" onClick={() => navigate(`/workspaces/${w.id}/syllabus`)}>
+                      Open syllabus
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDelete(w.id);
+                      }}
+                      disabled={deleting === w.id}
+                    >
+                      {deleting === w.id ? "Deleting…" : <Trash2 className="h-3 w-3" />}
+                    </Button>
+                  </div>
                 </div>
               </CardContent>
             </Card>

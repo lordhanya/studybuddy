@@ -104,6 +104,10 @@ export const api = {
     create: (body: any) => api.post("/api/groups", body),
     get: (id: string) => api.get(`/api/groups/${id}`),
     join: (body: any) => api.post("/api/groups/join", body),
+    remove: (id: string) => api.del(`/api/groups/${id}`),
+    exit: (id: string) => api.post(`/api/groups/${id}/exit`, null),
+    removeMember: (groupId: string, userId: string) =>
+      api.del(`/api/groups/${groupId}/members/${userId}`),
   },
 
   // Daily updates (check-ins)

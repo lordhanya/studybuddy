@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 import { api } from "@/services/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,9 +9,11 @@ import { Label } from "@/components/ui/label";
 import PageHeader from "@/components/PageHeader";
 import EmptyState from "@/components/EmptyState";
 import ErrorBanner from "@/components/ErrorBanner";
-import { Plus, Users } from "lucide-react";
+import { Plus, Users, Trash2, LogOut } from "lucide-react";
 
 export default function GroupsPage() {
+  const { user } = useAuth();
+  const navigate = useNavigate();
   const [groups, setGroups] = useState([]);
   const [loading, setLoading] = useState(true);
   const [createMode, setCreateMode] = useState(false);
@@ -18,6 +21,8 @@ export default function GroupsPage() {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [inviteCode, setInviteCode] = useState("");
+  const [deletingGroup, setDeletingGroup] = useState("");
+  const [exitingGroup, setExitingGroup] = useState("");
   const [error, setError] = useState("");
 
   const loadGroups = async () => {
@@ -60,6 +65,32 @@ export default function GroupsPage() {
       await loadGroups();
     } catch (err) {
       setError(err.message || "Invalid invite code");
+    }
+  };
+
+  const handleDeleteGroup = async (id) => {
+    if (!window.confirm("Delete this group? All workspaces and activity will be removed.")) return;
+    setDeletingGroup(id);
+    try {
+      await api.groups.remove(id);
+      setGroups((current) => current.filter((g) => g.id !== id));
+    } catch (err) {
+      setError(err.message || "Failed to delete group");
+    } finally {
+      setDeletingGroup("");
+    }
+  };
+
+  const handleExitGroup = async (id) => {
+    if (!window.confirm("Leave this group? You'll lose access to its workspaces and activity.")) return;
+    setExitingGroup(id);
+    try {
+      await api.groups.exit(id);
+      setGroups((current) => current.filter((g) => g.id !== id));
+    } catch (err) {
+      setError(err.message || "Failed to leave group");
+    } finally {
+      setExitingGroup("");
     }
   };
 
@@ -156,9 +187,9 @@ export default function GroupsPage() {
           {groups.length ? (
             groups.map((g) => (
               <Link key={g.id} to={`/groups/${g.id}`}>
-                <Card>
-                  <CardHeader className="pb-3">
-                    <div className="flex items-start justify-between gap-2">
+                <Card className="h-full flex flex-col">
+                  <CardHeader className="pb-3 flex items-start justify-between gap-2 shrink-0">
+                    <div className="flex-1 min-w-0">
                       <CardTitle className="text-base">{g.name}</CardTitle>
                       {g.isOwner && (
                         <span className="text-[10px] uppercase tracking-wider text-[hsl(var(--muted-foreground))]">
@@ -166,8 +197,37 @@ export default function GroupsPage() {
                         </span>
                       )}
                     </div>
+                    <div className="flex items-center gap-1 shrink-0">
+                      {g.isOwner ? (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            handleDeleteGroup(g.id);
+                          }}
+                          disabled={deletingGroup === g.id}
+                        >
+                          {deletingGroup === g.id ? "Deleting…" : <Trash2 className="h-3 w-3" />}
+                        </Button>
+                      ) : (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            handleExitGroup(g.id);
+                          }}
+                          disabled={exitingGroup === g.id}
+                        >
+                          {exitingGroup === g.id ? "Leaving…" : <LogOut className="h-3 w-3" />}
+                        </Button>
+                      )}
+                    </div>
                   </CardHeader>
-                  <CardContent>
+                  <CardContent className="flex-1">
                     {g.description && (
                       <p className="text-sm text-[hsl(var(--muted-foreground))] mb-3 line-clamp-2">
                         {g.description}
@@ -183,8 +243,8 @@ export default function GroupsPage() {
                       )}
                     </div>
                     {g.inviteCode && (
-                      <div className="flex items-center gap-2 text-xs bg-[hsl(var(--secondary))] px-2 py-1.5 rounded-md">
-                        <span className="font-mono">Invite: {g.inviteCode}</span>
+                      <div className="mt-auto flex items-center gap-2 text-xs bg-[hsl(var(--secondary))] px-2 py-1.5 rounded-md font-mono">
+                        <span>Invite: {g.inviteCode}</span>
                       </div>
                     )}
                   </CardContent>

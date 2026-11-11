@@ -34,6 +34,7 @@ import activityReactions from "./routes/activities/[id]/reactions.js";
 import groupsIndex from "./routes/groups/index.js";
 import groupsJoin from "./routes/groups/join.js";
 import groupsItem from "./routes/groups/[id].js";
+import groupMemberRemove from "./routes/groups/[id]/members/[userId].js";
 
 import goalsIndex from "./routes/goals/index.js";
 import goalItem from "./routes/goals/[id].js";
@@ -112,6 +113,9 @@ const ROUTES = [
   { method: "POST", path: "/groups", handler: groupsIndex },
   { method: "POST", path: "/groups/join", handler: groupsJoin },
   { method: "GET", path: "/groups/:id", handler: groupsItem },
+  { method: "DELETE", path: "/groups/:id", handler: groupsItem },
+  { method: "POST", path: "/groups/:id/exit", handler: groupsItem },
+  { method: "DELETE", path: "/groups/:id/members/:userId", handler: groupMemberRemove },
 
   // --- Daily updates (check-ins) ---
   { method: "GET", path: "/dailyUpdates", handler: dailyUpdatesIndex },

@@ -73,7 +73,41 @@ async function getGroup(req, res) {
   });
 }
 
+async function deleteGroup(req, res) {
+  const { id } = req.query;
+  const group = await prisma.studyGroup.findUnique({ where: { id } });
+  if (!group) {
+    res.status(404).json({ message: "Group not found" });
+    return;
+  }
+  if (group.createdBy !== req.user.id) {
+    res.status(403).json({ message: "Only the group owner can delete the group" });
+    return;
+  }
+  await prisma.studyGroup.delete({ where: { id } });
+  res.json({ ok: true });
+}
+
+async function exitGroup(req, res) {
+  const { id } = req.query;
+  const membership = await prisma.groupMember.findUnique({
+    where: { groupId_userId: { groupId: id, userId: req.user.id } },
+  });
+  if (!membership) {
+    res.status(403).json({ message: "Not a member of this group" });
+    return;
+  }
+  if (membership.role === "OWNER") {
+    res.status(400).json({ message: "Owner cannot exit. Delete the group instead." });
+    return;
+  }
+  await prisma.groupMember.delete({ where: { id: membership.id } });
+  res.json({ ok: true });
+}
+
 export default async function handler(req, res) {
   if (req.method === "GET") return requireAuth(getGroup)(req, res);
+  if (req.method === "DELETE") return requireAuth(deleteGroup)(req, res);
+  if (req.method === "POST") return requireAuth(exitGroup)(req, res);
   res.status(405).json({ message: "Method not allowed" });
 }

@@ -13,7 +13,7 @@ import ErrorBanner from "@/components/ErrorBanner";
 import PresenceStrip from "@/components/PresenceStrip";
 import TodayCheckin from "@/components/TodayCheckin";
 import ContributionGraph from "@/components/ContributionGraph";
-import { Users, Target, Activity, Clock, Share2, MoreHorizontal, Sun } from "lucide-react";
+import { Users, Target, Activity, Clock, Share2, MoreHorizontal, Sun, LogOut, Trash2 } from "lucide-react";
 
 function ymd(date) {
   return (
@@ -36,6 +36,9 @@ export default function GroupHomePage() {
   const [activities, setActivities] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [deletingGroup, setDeletingGroup] = useState(false);
+  const [exitingGroup, setExitingGroup] = useState(false);
+  const [removingMember, setRemovingMember] = useState("");
 
   const today = ymd(new Date());
 
@@ -59,6 +62,45 @@ export default function GroupHomePage() {
       setLoading(false);
     }
   }, [id, today]);
+
+  const handleDeleteGroup = async () => {
+    if (!window.confirm("Delete this group? All workspaces and activity will be removed.")) return;
+    setDeletingGroup(true);
+    try {
+      await api.groups.remove(id);
+      navigate("/groups");
+    } catch (err) {
+      setError(err.message || "Failed to delete group");
+    } finally {
+      setDeletingGroup(false);
+    }
+  };
+
+  const handleExitGroup = async () => {
+    if (!window.confirm("Leave this group? You'll lose access to its workspaces and activity.")) return;
+    setExitingGroup(true);
+    try {
+      await api.groups.exit(id);
+      navigate("/groups");
+    } catch (err) {
+      setError(err.message || "Failed to leave group");
+    } finally {
+      setExitingGroup(false);
+    }
+  };
+
+  const handleRemoveMember = async (userId) => {
+    if (!window.confirm("Remove this member from the group?")) return;
+    setRemovingMember(userId);
+    try {
+      await api.groups.removeMember(id, userId);
+      loadGroup();
+    } catch (err) {
+      setError(err.message || "Failed to remove member");
+    } finally {
+      setRemovingMember("");
+    }
+  };
 
   useEffect(() => {
     loadGroup();
@@ -119,6 +161,25 @@ export default function GroupHomePage() {
             <Button variant="outline" size="sm" onClick={() => navigate("/groups")}>
               <Users className="h-3.5 w-3.5" /> All groups
             </Button>
+            {!group.isOwner ? (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={handleExitGroup}
+                disabled={exitingGroup}
+              >
+                {exitingGroup ? "Leaving…" : <LogOut className="h-3.5 w-3.5" />}
+              </Button>
+            ) : (
+              <Button
+                size="sm"
+                variant="destructive"
+                onClick={handleDeleteGroup}
+                disabled={deletingGroup}
+              >
+                {deletingGroup ? "Deleting…" : <Trash2 className="h-3.5 w-3.5" />}
+              </Button>
+            )}
             <button
               type="button"
               className="rounded-md p-1.5 text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--secondary))]"
@@ -264,12 +325,27 @@ export default function GroupHomePage() {
                             </span>
                           )}
                         </div>
-                        {m.onlineNow && (
-                          <span className="text-[10px] bg-[hsl(var(--accent))] px-1.5 py-0.5 rounded text-[hsl(var(--accent-foreground))] font-medium ml-2">
-                            Online
-                          </span>
-                        )}
-                      </div>
+                          {m.onlineNow && (
+                            <span className="text-[10px] bg-[hsl(var(--accent))] px-1.5 py-0.5 rounded text-[hsl(var(--accent-foreground))] font-medium ml-2">
+                              Online
+                            </span>
+                          )}
+                          {(group.isOwner || group.role === "ADMIN") &&
+                            m.userId !== user.id &&
+                            m.role !== "OWNER" && (
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleRemoveMember(m.userId);
+                                }}
+                                disabled={removingMember === m.userId}
+                              >
+                                {removingMember === m.userId ? "Removing…" : <Trash2 className="h-3 w-3" />}
+                              </Button>
+                            )}
+                        </div>
                     );
                   })}
                 </div>

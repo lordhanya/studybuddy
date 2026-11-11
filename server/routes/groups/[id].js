@@ -1,5 +1,5 @@
-import { prisma } from "../../../lib/prisma.js";
-import { requireAuth } from "../../../lib/middleware.js";
+import { prisma } from "../../lib/prisma.js";
+import { requireAuth } from "../../lib/middleware.js";
 
 const ONLINE_WINDOW_MINUTES = 5;
 

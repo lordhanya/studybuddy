@@ -1,5 +1,5 @@
-import { prisma } from "../../../lib/prisma.js";
-import { requireAuth } from "../../../lib/middleware.js";
+import { prisma } from "../../lib/prisma.js";
+import { requireAuth } from "../../lib/middleware.js";
 
 // POST /api/presence/ping  — heartbeat; updates lastSeenAt for all groups of the user.
 // Throttled client-side (max once per minute) to avoid hammering the DB.

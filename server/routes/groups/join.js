@@ -1,5 +1,6 @@
 import { prisma } from "../../lib/prisma.js";
 import { requireAuth } from "../../lib/middleware.js";
+import { logActivity } from "../../lib/activityLog.js";
 
 export default async function handler(req, res) {
   if (req.method !== "POST") {
@@ -32,6 +33,19 @@ export default async function handler(req, res) {
       await prisma.groupMember.create({
         data: { groupId: group.id, userId: req.user.id, role: "MEMBER" },
       });
+
+      // Auto-log member joined to the group feed.
+      try {
+        await logActivity({
+          userId: req.user.id,
+          type: "MEMBER_JOINED",
+          content: `Joined the group`,
+          groupId: group.id,
+          metadata: { groupName: group.name },
+        });
+      } catch {
+        // Never fail the join because feed logging failed.
+      }
 
       res.json({
         id: group.id,

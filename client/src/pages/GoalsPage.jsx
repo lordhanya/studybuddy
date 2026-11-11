@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import PageHeader from "@/components/PageHeader";
 import EmptyState from "@/components/EmptyState";
 import ErrorBanner from "@/components/ErrorBanner";
-import { Target, Trash2 } from "lucide-react";
+import { Target, Trash2, Users, Share2 } from "lucide-react";
 
 const STATUS_CONFIG = {
   ACTIVE: { label: "Active", variant: "secondary" },
@@ -23,12 +23,17 @@ export default function GoalsPage() {
   const [creating, setCreating] = useState(false);
   const [form, setForm] = useState({
     workspaceId: "",
+    groupId: "",
     title: "",
     description: "",
     targetDate: "",
     status: "ACTIVE",
+    visibility: "PERSONAL",
+    progress: 0,
   });
+  const [shareToGroup, setShareToGroup] = useState(false);
   const [workspaces, setWorkspaces] = useState([]);
+  const [groups, setGroups] = useState([]);
 
   useEffect(() => {
     loadData();
@@ -36,12 +41,14 @@ export default function GoalsPage() {
 
   const loadData = async () => {
     try {
-      const [gs, ws] = await Promise.all([
-        api.goals.list(),
+      const [gs, ws, grps] = await Promise.all([
+        api.goals.list({ scope: "personal" }),
         api.workspaces.list(),
+        api.groups.list(),
       ]);
       setGoals(Array.isArray(gs) ? gs : []);
       setWorkspaces(Array.isArray(ws) ? ws : []);
+      setGroups(Array.isArray(grps) ? grps : []);
     } catch (e) {
       setError(e.message || "Failed to load goals");
     } finally {
@@ -59,11 +66,24 @@ export default function GoalsPage() {
         description: form.description || undefined,
         targetDate: form.targetDate || undefined,
         status: form.status,
+        visibility: shareToGroup ? "GROUP" : "PERSONAL",
+        progress: form.progress || 0,
       };
       if (form.workspaceId) body.workspaceId = form.workspaceId;
+      if (shareToGroup && form.groupId) body.groupId = form.groupId;
       const goal = await api.goals.create(body);
       setGoals((current) => [goal, ...current]);
-      setForm({ workspaceId: "", title: "", description: "", targetDate: "", status: "ACTIVE" });
+      setForm({
+        workspaceId: "",
+        groupId: "",
+        title: "",
+        description: "",
+        targetDate: "",
+        status: "ACTIVE",
+        visibility: "PERSONAL",
+        progress: 0,
+      });
+      setShareToGroup(false);
     } catch (err) {
       setError(err.message || "Failed to create goal");
     } finally {
@@ -184,6 +204,19 @@ export default function GoalsPage() {
                 />
               </div>
               <div className="space-y-2">
+                <Label htmlFor="goalProgress">Progress (%)</Label>
+                <Input
+                  id="goalProgress"
+                  type="number"
+                  min="0"
+                  max="100"
+                  value={form.progress}
+                  onChange={(e) =>
+                    setForm({ ...form, progress: Number(e.target.value) || 0 })
+                  }
+                />
+              </div>
+              <div className="space-y-2">
                 <Label htmlFor="goalStatus">Status</Label>
                 <select
                   id="goalStatus"
@@ -195,6 +228,41 @@ export default function GoalsPage() {
                     <option key={key} value={key}>{cfg.label}</option>
                   ))}
                 </select>
+              </div>
+              <div className="space-y-2 sm:col-span-2 lg:col-span-2">
+                <div className="flex items-center gap-2">
+                  <input
+                    id="goalShare"
+                    type="checkbox"
+                    checked={shareToGroup}
+                    onChange={(e) => setShareToGroup(e.target.checked)}
+                    className="rounded bg-[hsl(var(--background))] border-[hsl(var(--input))] text-[hsl(var(--ring))] focus:ring-[hsl(var(--ring))]"
+                  />
+                  <Label htmlFor="goalShare" className="text-sm cursor-pointer">
+                    Share to group <Share2 className="h-3.5 w-3.5 ml-1" />
+                  </Label>
+                </div>
+                {shareToGroup && (
+                  <div className="space-y-2">
+                    <Label htmlFor="goalGroup">Share with</Label>
+                    <select
+                      id="goalGroup"
+                      value={form.groupId}
+                      onChange={(e) => setForm({ ...form, groupId: e.target.value })}
+                      className="w-full rounded-md border border-[hsl(var(--input))] bg-[hsl(var(--background))] px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))]"
+                    >
+                      <option value="">Select a group</option>
+                      {groups.map((g) => (
+                        <option key={g.id} value={g.id}>
+                          {g.name}
+                        </option>
+                      ))}
+                    </select>
+                    <p className="text-xs text-[hsl(var(--muted-foreground))]">
+                      Group members will see this goal and its progress.
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
             <Button type="submit" disabled={creating || !form.title.trim()} className="mt-2 w-full sm:w-auto">

@@ -98,6 +98,28 @@ export const api = {
     },
   },
 
+  // Groups
+  groups: {
+    list: () => api.get("/api/groups"),
+    create: (body: any) => api.post("/api/groups", body),
+    get: (id: string) => api.get(`/api/groups/${id}`),
+    join: (body: any) => api.post("/api/groups/join", body),
+  },
+
+  // Daily updates (check-ins)
+  dailyUpdates: {
+    list: (params: Record<string, string> = {}) => {
+      const qs = new URLSearchParams(params).toString();
+      return api.get(`/api/dailyUpdates?${qs}`);
+    },
+    upsert: (body: any) => api.post("/api/dailyUpdates", body),
+  },
+
+  // Presence
+  presence: {
+    ping: () => api.post("/api/presence/ping", null),
+  },
+
   // Goals
   goals: {
     list: (params: Record<string, string> = {}) => {

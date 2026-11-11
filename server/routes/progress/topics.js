@@ -1,5 +1,6 @@
 import { prisma } from "../../lib/prisma.js";
 import { requireAuth } from "../../lib/middleware.js";
+import { logActivity } from "../../lib/activityLog.js";
 
 const VALID_STATUSES = ["NOT_STARTED", "IN_PROGRESS", "COMPLETED", "NEEDS_REVISION"];
 
@@ -47,6 +48,21 @@ async function updateTopicProgress(req, res) {
     update: { status, completedAt: status === "COMPLETED" ? new Date() : null },
     create: { topicId, userId: req.user.id, status, completedAt: status === "COMPLETED" ? new Date() : null },
   });
+
+  // Auto-log topic completion to the group feed.
+  if (status === "COMPLETED") {
+    try {
+      await logActivity({
+        userId: req.user.id,
+        type: "TOPIC_COMPLETED",
+        content: `Completed topic "${topic.name}"`,
+        workspaceId: topic.chapter.subject.workspace.id,
+        metadata: { topicId, chapterId: topic.chapterId },
+      });
+    } catch {
+      // Never fail the progress update because feed logging failed.
+    }
+  }
 
   res.json(progress);
 }

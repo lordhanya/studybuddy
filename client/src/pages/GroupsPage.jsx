@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { api } from "@/services/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -154,39 +155,41 @@ export default function GroupsPage() {
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {groups.length ? (
             groups.map((g) => (
-              <Card key={g.id}>
-                <CardHeader className="pb-3">
-                  <div className="flex items-start justify-between gap-2">
-                    <CardTitle className="text-base">{g.name}</CardTitle>
-                    {g.isOwner && (
-                      <span className="text-[10px] uppercase tracking-wider text-[hsl(var(--muted-foreground))]">
-                        Owner
-                      </span>
-                    )}
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  {g.description && (
-                    <p className="text-sm text-[hsl(var(--muted-foreground))] mb-3 line-clamp-2">
-                      {g.description}
-                    </p>
-                  )}
-                  <div className="flex items-center gap-2 text-xs text-[hsl(var(--muted-foreground))] mb-3">
-                    <Users className="h-4 w-4 shrink-0" />
-                    <span>
-                      {g.memberCount} member{g.memberCount === 1 ? "" : "s"}
-                    </span>
-                    {!g.isOwner && g.createdBy && (
-                      <span>· Created by {g.createdBy.fullName}</span>
-                    )}
-                  </div>
-                  {g.inviteCode && (
-                    <div className="flex items-center gap-2 text-xs bg-[hsl(var(--secondary))] px-2 py-1.5 rounded-md">
-                      <span className="font-mono">Invite: {g.inviteCode}</span>
+              <Link key={g.id} to={`/groups/${g.id}`}>
+                <Card>
+                  <CardHeader className="pb-3">
+                    <div className="flex items-start justify-between gap-2">
+                      <CardTitle className="text-base">{g.name}</CardTitle>
+                      {g.isOwner && (
+                        <span className="text-[10px] uppercase tracking-wider text-[hsl(var(--muted-foreground))]">
+                          Owner
+                        </span>
+                      )}
                     </div>
-                  )}
-                </CardContent>
-              </Card>
+                  </CardHeader>
+                  <CardContent>
+                    {g.description && (
+                      <p className="text-sm text-[hsl(var(--muted-foreground))] mb-3 line-clamp-2">
+                        {g.description}
+                      </p>
+                    )}
+                    <div className="flex items-center gap-2 text-xs text-[hsl(var(--muted-foreground))] mb-3">
+                      <Users className="h-4 w-4 shrink-0" />
+                      <span>
+                        {g.memberCount} member{g.memberCount === 1 ? "" : "s"}
+                      </span>
+                      {!g.isOwner && g.createdBy && (
+                        <span>· Created by {g.createdBy.fullName}</span>
+                      )}
+                    </div>
+                    {g.inviteCode && (
+                      <div className="flex items-center gap-2 text-xs bg-[hsl(var(--secondary))] px-2 py-1.5 rounded-md">
+                        <span className="font-mono">Invite: {g.inviteCode}</span>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </Link>
             ))
           ) : (
             <Card className="sm:col-span-2 lg:col-span-3">

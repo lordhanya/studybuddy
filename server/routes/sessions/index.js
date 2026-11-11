@@ -1,5 +1,6 @@
 import { prisma } from "../../lib/prisma.js";
 import { requireAuth } from "../../lib/middleware.js";
+import { logActivity } from "../../lib/activityLog.js";
 
 async function listSessions(req, res) {
   const { workspaceId, limit } = req.query;
@@ -84,6 +85,19 @@ async function createSession(req, res) {
     },
     include: { workspace: { select: { id: true, name: true } } },
   });
+
+  // Auto-log to group feed.
+  try {
+    await logActivity({
+      userId: req.user.id,
+      type: "STUDY_SESSION",
+      content: `Studied for ${Math.round(minutes)} minutes`,
+      workspaceId: workspaceIdFinal,
+      metadata: { duration: Math.round(minutes), sessionId: session.id },
+    });
+  } catch {
+    // Never fail the session create because feed logging failed.
+  }
 
   res.status(201).json(session);
 }

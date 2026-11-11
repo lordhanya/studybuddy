@@ -33,6 +33,7 @@ import activityReactions from "./routes/activities/[id]/reactions.js";
 
 import groupsIndex from "./routes/groups/index.js";
 import groupsJoin from "./routes/groups/join.js";
+import groupsItem from "./routes/groups/[id].js";
 
 import goalsIndex from "./routes/goals/index.js";
 import goalItem from "./routes/goals/[id].js";
@@ -42,6 +43,9 @@ import sessionItem from "./routes/sessions/[id].js";
 
 import testsIndex from "./routes/tests/index.js";
 import testItem from "./routes/tests/[id].js";
+
+import dailyUpdatesIndex from "./routes/dailyUpdates/index.js";
+import presencePing from "./routes/presence/ping.js";
 
 import leaderboard from "./routes/leaderboard/index.js";
 import analytics from "./routes/analytics/index.js";
@@ -107,6 +111,14 @@ const ROUTES = [
   { method: "GET", path: "/groups", handler: groupsIndex },
   { method: "POST", path: "/groups", handler: groupsIndex },
   { method: "POST", path: "/groups/join", handler: groupsJoin },
+  { method: "GET", path: "/groups/:id", handler: groupsItem },
+
+  // --- Daily updates (check-ins) ---
+  { method: "GET", path: "/dailyUpdates", handler: dailyUpdatesIndex },
+  { method: "POST", path: "/dailyUpdates", handler: dailyUpdatesIndex },
+
+  // --- Presence ---
+  { method: "POST", path: "/presence/ping", handler: presencePing },
 
   // --- Goals ---
   { method: "GET", path: "/goals", handler: goalsIndex },

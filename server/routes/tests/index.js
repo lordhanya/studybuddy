@@ -1,5 +1,6 @@
 import { prisma } from "../../lib/prisma.js";
 import { requireAuth } from "../../lib/middleware.js";
+import { logActivity } from "../../lib/activityLog.js";
 
 async function listTests(req, res) {
   const { workspaceId, limit } = req.query;
@@ -109,6 +110,19 @@ async function createTest(req, res) {
     },
     include: { workspace: { select: { id: true, name: true } } },
   });
+
+  // Auto-log to group feed.
+  try {
+    await logActivity({
+      userId: req.user.id,
+      type: "MOCK_TEST",
+      content: `Took mock test "${cleanTitle}" — ${obtained}/${total}`,
+      workspaceId: workspaceIdFinal,
+      metadata: { testId: test.id, totalMarks: total, obtainedMarks: obtained },
+    });
+  } catch {
+    // Never fail the test create because feed logging failed.
+  }
 
   res.status(201).json(test);
 }

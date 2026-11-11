@@ -11,6 +11,7 @@ import WorkspacesPage from "@/pages/WorkspacesPage";
 import SyllabusPage from "@/pages/SyllabusPage";
 import ActivityPage from "@/pages/ActivityPage";
 import GoalsPage from "@/pages/GoalsPage";
+import GroupHomePage from "@/pages/GroupHomePage";
 import SessionsPage from "@/pages/SessionsPage";
 import TestsPage from "@/pages/TestsPage";
 import LeaderboardPage from "@/pages/LeaderboardPage";
@@ -73,6 +74,7 @@ export default function App() {
           <Route index element={<Navigate to="/dashboard" replace />} />
           <Route path="dashboard" element={<DashboardPage />} />
           <Route path="groups" element={<GroupsPage />} />
+          <Route path="groups/:id" element={<GroupHomePage />} />
           <Route path="workspaces" element={<WorkspacesPage />} />
           <Route path="workspaces/:workspaceId/syllabus" element={<SyllabusPage />} />
           <Route path="activity" element={<ActivityPage />} />

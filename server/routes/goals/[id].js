@@ -1,5 +1,6 @@
 import { prisma } from "../../lib/prisma.js";
 import { requireAuth } from "../../lib/middleware.js";
+import { logActivity } from "../../lib/activityLog.js";
 
 const VALID_STATUSES = ["ACTIVE", "COMPLETED", "CANCELLED"];
 
@@ -67,6 +68,23 @@ async function updateGoal(req, res) {
   }
 
   const updated = await prisma.goal.update({ where: { id }, data, include: { workspace: { select: { id: true, name: true } } } });
+
+  // Auto-log goal achievement to the group feed when it transitions to COMPLETED.
+  if (status === "COMPLETED" && goal.status !== "COMPLETED") {
+    try {
+      await logActivity({
+        userId: req.user.id,
+        type: "GOAL_ACHIEVED",
+        content: `Achieved goal "${updated.title}"`,
+        groupId: goal.groupId || undefined,
+        workspaceId: goal.workspaceId || undefined,
+        metadata: { goalId: updated.id },
+      });
+    } catch {
+      // Never fail the goal update because feed logging failed.
+    }
+  }
+
   res.json(updated);
 }
 

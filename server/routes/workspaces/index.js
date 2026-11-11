@@ -22,6 +22,7 @@ async function createWorkspace(req, res) {
   const { groupId, name, description, examType, examYear } = req.body || {};
 
   const cleanName = String(name || "").trim();
+  const cleanDescription = String(description || "").trim();
   const cleanExamType = String(examType || "").trim();
   const cleanExamYear = String(examYear || "").trim();
   const parsedYear = parseInt(cleanExamYear, 10);

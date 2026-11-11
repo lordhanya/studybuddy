@@ -156,7 +156,22 @@ function extractParams(keys, match) {
   return params;
 }
 
+const SECURITY_HEADERS = {
+  "X-Content-Type-Options": "nosniff",
+  "X-Frame-Options": "DENY",
+  "Content-Security-Policy":
+    "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; font-src 'self'; base-uri 'self'; form-action 'self';",
+};
+
+function setSecurityHeaders(res) {
+  for (const [key, value] of Object.entries(SECURITY_HEADERS)) {
+    res.setHeader(key, value);
+  }
+}
+
 export default async function handler(req, res) {
+  setSecurityHeaders(res);
+
   // Strip /api prefix from the URL path
   const url = req.url || "";
   const apiPath = url.startsWith("/api") ? url.slice(4) : url;

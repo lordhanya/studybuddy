@@ -23,8 +23,8 @@ async function createWorkspace(req, res) {
 
   const cleanName = String(name || "").trim();
   const cleanExamType = String(examType || "").trim();
-  const cleanDescription = String(description || "").trim();
-  const parsedYear = parseInt(examYear, 10);
+  const cleanExamYear = String(examYear || "").trim();
+  const parsedYear = parseInt(cleanExamYear, 10);
 
   if (!groupId || !cleanName || !cleanExamType) {
     res.status(400).json({ message: "groupId, name and examType are required" });
@@ -50,7 +50,7 @@ async function createWorkspace(req, res) {
       name: cleanName,
       description: cleanDescription || null,
       examType: cleanExamType,
-      examYear: parsedYear,
+      examYear: cleanExamYear,
     },
     include: { group: { select: { id: true, name: true } } },
   });
